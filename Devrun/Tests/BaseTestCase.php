@@ -99,12 +99,17 @@ class BaseTestCase extends TestCase {
 
     protected function setUp()
     {
-        $annotations = $this->getAnnotations();
+        $everyTestNewContainer = false;
 
-        /*
-         * hack!, if some test methods is depending (previous method return) create new Container
-         */
-        if (isset($annotations['method']['return']) ) {
+        if (!$everyTestNewContainer) {
+            $annotations = $this->getAnnotations();
+            $everyTestNewContainer = isset($annotations['method']['return']) || isset($annotations['method']['dataProvider']) || isset($annotations['method']['depends']);
+        }
+
+        if ($everyTestNewContainer) {
+            /*
+             * hack!, if some test methods is depending (previous method return) create new Container
+             */
             global $container;
             global $_container;
 

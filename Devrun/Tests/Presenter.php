@@ -261,4 +261,47 @@ class Presenter extends BaseTestCase
     }
 
 
+    /**
+     * přihlášení se
+     *
+     * @param string $type contactTeamForm|adminForm
+     *
+     * @return \Nette\Security\User
+     * @throws \Nette\Security\AuthenticationException
+     */
+    protected function login($type = 'adminUser')
+    {
+        $container  = $this->getContainer();
+        $userParams = $container->getParameters()[$type];
+
+        /** @var \Nette\Security\User $user */
+        $user = $this->getSecurityUser();
+        $user->login($userParams['username'], $userParams['password']);
+
+        return $user;
+    }
+
+
+    /**
+     * @return User
+     */
+    protected function getSecurityUser()
+    {
+        $container  = $this->getContainer();
+        /** @var \Nette\Security\User $user */
+        $user = $container->getByType('Nette\Security\User');
+        return $user;
+    }
+
+
+    protected function setUp()
+    {
+        parent::setUp();
+
+        /** @var \Nette\Security\User $user */
+        $user = $this->getSecurityUser();
+        $user->logout();
+    }
+
+
 }
