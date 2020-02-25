@@ -52,7 +52,13 @@ class ComposerListener implements Subscriber
                 $configLatsTime = $moduleConfig[ModuleFacade::COMPOSER_HASH] ?? "2199-01-01 10:00:00.000000";
 
                 if ($lastTimeHuman < $configLatsTime) {
-                    exec(trim("composer update {$this->tags}"), $output, $return);
+                    $composerPhar = $baseDir . "/composer.phar";
+                    if (file_exists($composerPhar)) {
+                        exec(trim("php composer.phar update {$this->tags}"), $output, $return);
+
+                    } else {
+                        exec(trim("composer update {$this->tags}"), $output, $return);
+                    }
 
                     if ($return == 0 && $this->write) {
                         $lastTimeHuman = date("Y-m-d H:i:s.u", filemtime($composerFile));
