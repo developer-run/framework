@@ -48,11 +48,10 @@ class ComposerListener implements Subscriber
             if (file_exists($composerFile = $baseDir . "/composer.lock")) {
                 $lastTimeHuman = date("Y-m-d H:i:s.u", filemtime($composerFile));
 
-                $moduleConfig  = $moduleFacade->loadModuleConfig();
-                $configLatTime = $moduleConfig[ModuleFacade::COMPOSER_HASH] ?? '';
+                $moduleConfig   = $moduleFacade->loadModuleConfig();
+                $configLatsTime = $moduleConfig[ModuleFacade::COMPOSER_HASH] ?? "2199-01-01 10:00:00.000000";
 
-                if ($lastTimeHuman < $configLatTime) {
-
+                if ($lastTimeHuman < $configLatsTime) {
                     exec(trim("composer update {$this->tags}"), $output, $return);
 
                     if ($return == 0 && $this->write) {
