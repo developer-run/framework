@@ -1,7 +1,7 @@
 {
 	"name": "devrun/framework",
 	"type": "library",
-	"version": "v0.8.4",
+	"version": "v0.8.5",
 	"minimum-stability": "dev",
 	"description": "Simple and easy for use system for managing your websites.",
 	"keywords": ["nette", "framework"],
