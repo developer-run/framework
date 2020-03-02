@@ -1,8 +1,16 @@
 ### Editor
 .idea
+.docker
 
 ### Composer template
 composer.phar
+!composer.json
 /composer.lock
 /node_modules/
 /vendor/
+
+### Support template
+*.sh
+*.js
+*.yml
+*.json

@@ -46,9 +46,8 @@ class ComposerListener implements Subscriber
             $baseDir = $moduleFacade->getContext()->getParameters()['baseDir'];
 
             if (file_exists($composerFile = $baseDir . "/composer.lock")) {
-                $lastTimeHuman = date("Y-m-d H:i:s.u", filemtime($composerFile));
-
                 $moduleConfig   = $moduleFacade->loadModuleConfig();
+                $lastTimeHuman  = date("Y-m-d H:i:s.u", filemtime($composerFile));
                 $configLatsTime = $moduleConfig[ModuleFacade::COMPOSER_HASH] ?? "2199-01-01 10:00:00.000000";
 
                 if ($lastTimeHuman < $configLatsTime) {
