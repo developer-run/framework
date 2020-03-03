@@ -14,3 +14,4 @@ composer.phar
 *.js
 *.yml
 *.json
+*.md

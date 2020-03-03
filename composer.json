@@ -1,7 +1,6 @@
 {
 	"name": "devrun/framework",
 	"type": "library",
-	"version": "v0.8.5",
 	"minimum-stability": "dev",
 	"description": "Simple and easy for use system for managing your websites.",
 	"keywords": ["nette", "framework"],
@@ -12,20 +11,11 @@
 		}
 	],
 	"require": {
-		"php": ">=7.0",
-		"nette/nette": "^2.4",
-		"kdyby/translation": "^2.3",
-		"kdyby/monolog": "^1.2",
-		"kdyby/doctrine": "^3.1",
-		"kdyby/fake-session": "^2.0",
-		"kdyby/nette-session-panel": "^3.2",
-		"flame/modules": "2.3.0",
-		"flame/framework": "^6.1",
-		"contributte/image-storage": "^1.1",
-		"nextras/migrations": "^3.1",
-		"zenify/doctrine-behaviors": "^4.2",
-		"phpunit/phpunit": "^5.0",
-		"phpunit/phpunit-dom-assertions": "^2.0",
+		"php": "^7.3",
+		"nette/nette": "^v3.0@dev",
+		"kdyby/translation": "^3.0@dev",
+		"kdyby/fake-session": "^3.0",
+		"contributte/image-storage": "^1.2@dev",
 
 		"ext-gd": "*",
 		"ext-curl": "*",
@@ -39,17 +29,17 @@
 		"ext-openssl": "*"
 	},
 	"require-dev": {
-		"contributte/codeception": "^0.7.7"
+		"contributte/codeception": "^1.4@dev"
 	},
 	"suggest": {
-		"gedmo/doctrine-extensions": "Allow doctrine tree etc. [dev-master]. This is only php 7.1, we have hard this in vendor/devrun/framework/Gedmo"
+		"kdyby/monolog": "Allow log to syslog service. This is conflict with tracy/tracy or something."
 	},
 	"autoload": {
-		"classmap": ["Devrun/", "Gedmo/"]
+		"classmap": ["Devrun/"]
 	},
 	"extra": {
 		"branch-alias": {
-			"dev-master": "0.8-dev"
+			"dev-master": "0.9-dev"
 		}
 	}
 }
