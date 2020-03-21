@@ -63,13 +63,13 @@ class Latte extends MacroSet
 
     public function tagImgAbs(MacroNode $node, PhpWriter $writer)
     {
-        return $writer->write('$_img = $_imgStorage->fromIdentifier(%node.array); echo "<img src=\"" . $proxyUrl . $baseUrl . "/" . $_img->createLink() . "\">";');
+        return $writer->write('$_img = $_imgStorage->fromIdentifier(%node.array); echo "<img src=\"" . $baseUrl . "/" . $_img->createLink() . "\">";');
     }
 
 
     public function attrImgAbs(MacroNode $node, PhpWriter $writer)
     {
-        return $writer->write('$_img = $_imgStorage->fromIdentifier(%node.array); echo \' src="\' . $proxyUrl . $baseUrl . "/" . $_img->createLink() . \'"\'');
+        return $writer->write('$_img = $_imgStorage->fromIdentifier(%node.array); echo \' src="\' . $baseUrl . "/" . $_img->createLink() . \'"\'');
     }
 
 

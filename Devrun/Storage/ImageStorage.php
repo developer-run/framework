@@ -9,10 +9,10 @@
 
 namespace Devrun\Storage;
 
-use Ublaboo\ImageStorage\Image;
-use Ublaboo\ImageStorage\ImageResizeException;
+use Contributte\ImageStorage\Image;
+use Contributte\ImageStorage\Exception\ImageResizeException;
 
-class ImageStorage extends \Ublaboo\ImageStorage\ImageStorage
+class ImageStorage extends \Contributte\ImageStorage\ImageStorage
 {
 
     /*
@@ -113,7 +113,7 @@ class ImageStorage extends \Ublaboo\ImageStorage\ImageStorage
      *
      * @param mixed $arg
      */
-    public function delete($arg)
+    public function delete($arg): void
     {
         if (is_object($arg) && $arg instanceof Image) {
             $script = ImageNameScript::fromIdentifier($arg->identifier);
@@ -152,9 +152,11 @@ class ImageStorage extends \Ublaboo\ImageStorage\ImageStorage
      *
      * @return Image|array
      * @throws ImageResizeException
+     * @throws \Contributte\ImageStorage\Exception\ImageStorageException
+     * @throws \Nette\Utils\ImageException
      * @throws \Nette\Utils\UnknownImageFileException
      */
-    public function fromIdentifier($args)
+    public function fromIdentifier($args): Image
     {
 
         if (!is_array($args)) {

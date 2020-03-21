@@ -10,6 +10,7 @@
 namespace Devrun\Module;
 
 
+use Nette\Reflection\ClassType;
 use Tracy\Debugger;
 use Tracy\ILogger;
 
@@ -116,7 +117,7 @@ class ComposerModule extends BaseModule
 
         $ret = isset($this->composerData['autoload']) ? $this->composerData['autoload'] : array();
 
-        if (file_exists(dirname($this->getReflection()->getFileName()) . '/static/autoload.php')) {
+        if (file_exists(dirname(ClassType::from($this)->getFileName()) . '/static/autoload.php')) {
             return array_merge($ret, array(
                 'files' => array('static/autoload.php'),
             ));

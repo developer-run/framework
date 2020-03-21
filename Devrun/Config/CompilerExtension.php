@@ -19,7 +19,6 @@ class CompilerExtension extends \Nette\DI\CompilerExtension
     const TAG_NETTE_PRESENTER  = 'nette.presenter';
     const TAG_DEVRUN_PRESENTER = 'devrun.presenter';
 
-    public $defaults = array();
 
     public function loadConfiguration()
     {
@@ -27,7 +26,7 @@ class CompilerExtension extends \Nette\DI\CompilerExtension
 
         $builder = $this->getContainerBuilder();
 
-        $fileName         = self::getReflection()->fileName;
+        $fileName         = Nette\Reflection\ClassType::from($this)->fileName;
         $relativeFileName = Nette\Utils\Strings::after($fileName, $builder->parameters['baseDir']);
         $relativeFileName = ltrim($relativeFileName, DIRECTORY_SEPARATOR);
 
@@ -41,13 +40,6 @@ class CompilerExtension extends \Nette\DI\CompilerExtension
 
         $builder->parameters['modules'][$this->name]['path'] = $modulePath;
         $builder->parameters['modules'][$this->name]['relativePath'] = rtrim($moduleRelativePath, DIRECTORY_SEPARATOR);
-
-        $config  = $this->getConfig($this->defaults);
-
-        if (isset($config['publicModule']) ) {
-            $builder->parameters['modules'][$this->name]['publicModule'] = $config['publicModule'];
-        }
-
     }
 
 
@@ -56,7 +48,7 @@ class CompilerExtension extends \Nette\DI\CompilerExtension
         parent::beforeCompile();
 
         $builder = $this->getContainerBuilder();
-        $config  = $this->getConfig($this->defaults);
+        $config  = $this->getConfig();
 
         // zatím se budeme spoléhat na standardní nette tag
         if ($presenters = $builder->findByTag(self::TAG_DEVRUN_PRESENTER)) {

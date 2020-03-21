@@ -9,10 +9,9 @@
 
 namespace Devrun\Application\UI\Control;
 
-use Brabijan\Images\TImagePipe;
-use Kdyby\Translation\ITranslator;
 use Kdyby\Translation\Translator;
 use Nette;
+use Nette\Application\UI\ITemplate;
 
 abstract class Control extends Nette\Application\UI\Control
 {
@@ -31,9 +30,9 @@ abstract class Control extends Nette\Application\UI\Control
     /**
      * @return \Nette\Templating\ITemplate
      */
-    protected function createTemplate()
+    protected function createTemplate(string $class = null): ITemplate
     {
-        $template = parent::createTemplate();
+        $template = parent::createTemplate($class);
         $file     = $this->getTemplateFile();
         if (file_exists($file)) {
             $template->setFile($file);

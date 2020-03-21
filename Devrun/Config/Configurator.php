@@ -1,7 +1,7 @@
 <?php
 /**
  * This file is part of the devrun
- * Copyright (c) 2016
+ * Copyright (c) 2020
  *
  * @file    Configurator.php
  * @author  Pavel Paulík <pavel.paulik@support.etnetera.cz>
@@ -12,13 +12,9 @@ namespace Devrun\Config;
 use Composer\Autoload\ClassLoader;
 use Devrun;
 use Devrun\DI\ImagesExtension;
-use Flame\Modules\DI\ModulesExtension;
 use Kdyby\Annotations\DI\AnnotationsExtension;
 use Kdyby\Console\DI\ConsoleExtension;
-use Kdyby\Doctrine\DI\OrmExtension;
 use Kdyby\Events\DI\EventsExtension;
-use Kdyby\Monolog\DI\MonologExtension;
-use Kdyby\SessionPanel\DI\SessionPanelExtension;
 use Kdyby\Translation\DI\TranslationExtension;
 use Nette\DI;
 use Nette\DI\Compiler;
@@ -26,8 +22,6 @@ use Nette\DI\Container;
 use Nette\DI\Helpers;
 use Nette\InvalidArgumentException;
 use Nette\Loaders\RobotLoader;
-use Nextras\Migrations\Bridges\NetteDI\MigrationsExtension;
-use Zenify\DoctrineBehaviors\DI\TranslatableExtension;
 
 /**
  * Class Configurator
@@ -54,9 +48,9 @@ class Configurator extends \Nette\Configurator
 
 
     /**
-     * @param string       $sandbox
+     * @param string|array $sandbox
      * @param bool|string|array $debugMode if is null then autodetect will use
-     * @param ClassLoader  $classLoader
+     * @param ClassLoader $classLoader
      */
     public function __construct($sandbox, $debugMode = NULL, ClassLoader $classLoader = NULL)
     {
@@ -158,7 +152,7 @@ class Configurator extends \Nette\Configurator
     }
 
 
-    public static function detectDebugMode($list = null)
+    public static function detectDebugMode($list = null): bool
     {
         $list = is_string($list)
             ? preg_split('#[,\s]+#', $list)
@@ -216,7 +210,7 @@ class Configurator extends \Nette\Configurator
     /**
      * @return Container
      */
-    public function createContainer()
+    public function createContainer(): DI\Container
     {
         // add config files
         foreach ($this->getConfigFiles() as $file) {
@@ -315,23 +309,23 @@ class Configurator extends \Nette\Configurator
         }
     }
 
-    public function generateContainer(DI\Compiler $compiler)
+    public function generateContainer(DI\Compiler $compiler): void
     {
         $this->onCompile[] = function (Configurator $config, Compiler $compiler) {
             $compiler->addExtension('events', new EventsExtension());
             $compiler->addExtension('console', new ConsoleExtension());
             $compiler->addExtension('annotations', new AnnotationsExtension());
             $compiler->addExtension('translation', new TranslationExtension());
-            $compiler->addExtension('translatable', new TranslatableExtension());
-            $compiler->addExtension('monolog', new MonologExtension());
-            $compiler->addExtension('modules', new ModulesExtension());
-            $compiler->addExtension('debugger.session', new SessionPanelExtension());
+//            $compiler->addExtension('translatable', new TranslatableExtension());
+//            $compiler->addExtension('monolog', new MonologExtension());
+//            $compiler->addExtension('modules', new ModulesExtension());
+//            $compiler->addExtension('debugger.session', new SessionPanelExtension());
 
             $compiler->addExtension('core', new Devrun\DI\CoreExtension());
             $compiler->addExtension('imageStorage', new ImagesExtension());
         };
 
-        return parent::generateContainer($compiler);
+        parent::generateContainer($compiler);
     }
 
 

@@ -13,9 +13,11 @@
 	"require": {
 		"php": "^7.3",
 		"nette/nette": "^v3.0@dev",
-		"kdyby/translation": "^3.0@dev",
+		"kdyby/events": "^3.2@dev",
 		"kdyby/fake-session": "^3.0",
+		"kdyby/translation": "^3.0@dev",
 		"contributte/image-storage": "^1.2@dev",
+		"devrun/monolog": "^1.3@dev",
 
 		"ext-gd": "*",
 		"ext-curl": "*",
@@ -31,6 +33,12 @@
 	"require-dev": {
 		"contributte/codeception": "^1.4@dev"
 	},
+	"repositories": [
+		{
+			"type": "vcs",
+			"url": "https://github.com/developer-run/Monolog"
+		}
+	],
 	"suggest": {
 		"kdyby/monolog": "Allow log to syslog service. This is conflict with tracy/tracy or something."
 	},

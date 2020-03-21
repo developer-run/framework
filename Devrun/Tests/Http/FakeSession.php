@@ -43,7 +43,7 @@ class FakeSession extends Nette\Http\Session
 
     /**
      */
-    public function start()
+    public function start(): void
     {
         $this->started = TRUE;
     }
@@ -52,7 +52,7 @@ class FakeSession extends Nette\Http\Session
     /**
      * @return bool
      */
-    public function isStarted()
+    public function isStarted(): bool
     {
         return $this->started;
     }
@@ -60,7 +60,7 @@ class FakeSession extends Nette\Http\Session
 
     /**
      */
-    public function close()
+    public function close(): void
     {
         $this->started = NULL;
     }
@@ -68,7 +68,7 @@ class FakeSession extends Nette\Http\Session
 
     /**
      */
-    public function destroy()
+    public function destroy(): void
     {
         $this->sections = array();
         $this->close();
@@ -78,7 +78,7 @@ class FakeSession extends Nette\Http\Session
     /**
      * @return bool
      */
-    public function exists()
+    public function exists(): bool
     {
         return TRUE;
     }
@@ -87,7 +87,7 @@ class FakeSession extends Nette\Http\Session
     /**
      *
      */
-    public function regenerateId()
+    public function regenerateId(): void
     {
         $this->id = md5((string)microtime(TRUE));
     }
@@ -96,7 +96,7 @@ class FakeSession extends Nette\Http\Session
     /**
      * @return string
      */
-    public function getId()
+    public function getId(): string
     {
         return $this->id;
     }
@@ -114,7 +114,7 @@ class FakeSession extends Nette\Http\Session
     /**
      * @return string
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
@@ -126,7 +126,7 @@ class FakeSession extends Nette\Http\Session
      *
      * @return \Devrun\Tests\Http\FakeSessionSection
      */
-    public function getSection($section, $class = 'Devrun\Tests\Http\FakeSessionSection')
+    public function getSection($section, $class = 'Devrun\Tests\Http\FakeSessionSection'): Nette\Http\SessionSection
     {
         return $this->sections[$section] = new $class($this, $section);
     }
@@ -150,7 +150,7 @@ class FakeSession extends Nette\Http\Session
      *
      * @return bool
      */
-    public function hasSection($section)
+    public function hasSection($section): bool
     {
         return isset($this->sections[$section]);
     }
@@ -159,7 +159,7 @@ class FakeSession extends Nette\Http\Session
     /**
      * @return \ArrayIterator
      */
-    public function getIterator()
+    public function getIterator(): \Iterator
     {
         return new \ArrayIterator($this->sections);
     }
@@ -167,7 +167,7 @@ class FakeSession extends Nette\Http\Session
 
     /**
      */
-    public function clean()
+    public function clean(): void
     {
 
     }
@@ -185,7 +185,7 @@ class FakeSession extends Nette\Http\Session
     /**
      * @return array
      */
-    public function getOptions()
+    public function getOptions(): array
     {
         return $this->options;
     }
@@ -203,7 +203,7 @@ class FakeSession extends Nette\Http\Session
     /**
      * @return array
      */
-    public function getCookieParameters()
+    public function getCookieParameters(): array
     {
         $keys  = array('cookie_path', 'cookie_domain', 'cookie_secure');
         $empty = array_fill_keys($keys, NULL);

@@ -10,6 +10,7 @@
 namespace Devrun\Application\UI\Presenter;
 
 use Devrun\Storage\ImageStorage;
+use Nette\Application\UI\ITemplate;
 use Nette\Application\UI\Presenter;
 
 trait TImgStoragePipe
@@ -22,7 +23,7 @@ trait TImgStoragePipe
     private static $called = false;
 
 
-    protected function attached($presenter)
+    protected function attached($presenter): void
     {
         if ($presenter instanceof Presenter) {
             $this->template->_imgStorage = $this->imgStorage;
@@ -43,7 +44,8 @@ trait TImgStoragePipe
         }
     }
 
-    public function createTemplate($class = null) {
+    protected function createTemplate(string $class = null): ITemplate
+    {
         self::$called = true;
 
         $template = parent::createTemplate($class);

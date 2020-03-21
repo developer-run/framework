@@ -30,6 +30,7 @@ class MigrationListener implements Subscriber
 
     /**
      * @param ModuleFacade $moduleFacade
+     * @throws \Nextras\Migrations\Exception
      */
     public function onUpdate(ModuleFacade $moduleFacade)
     {
@@ -42,6 +43,7 @@ class MigrationListener implements Subscriber
     /**
      * @param ModuleFacade $moduleFacade
      * @param IModule $module
+     * @throws \Nextras\Migrations\Exception
      */
     public function onInstall(ModuleFacade $moduleFacade, IModule $module)
     {

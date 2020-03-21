@@ -9,6 +9,7 @@
 
 namespace Devrun\Module;
 
+use Nette\Reflection\ClassType;
 use Nette\SmartObject;
 
 class BaseModule implements IModule
@@ -164,7 +165,7 @@ class BaseModule implements IModule
      */
     public function getPath()
     {
-        return dirname($this->getReflection()->getFileName());
+        return dirname(ClassType::from($this)->getFileName());
     }
 
 

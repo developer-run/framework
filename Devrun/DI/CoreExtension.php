@@ -1,7 +1,7 @@
 <?php
 /**
  * This file is part of the devrun
- * Copyright (c) 2016
+ * Copyright (c) 2020
  *
  * @file    CoreExtension.php
  * @author  Pavel Paulík <pavel.paulik@support.etnetera.cz>
@@ -9,38 +9,45 @@
 
 namespace Devrun\DI;
 
-use Devrun\Doctrine\Entities\UserEntity;
 use Devrun\Listeners\ComposerListener;
 use Devrun\Listeners\MigrationListener;
+use Devrun\Module\Providers\IRouterMappingProvider;
 use Devrun\Security\ControlVerifierReaders\AnnotationReader;
 use Devrun\Security\ControlVerifiers\ControlVerifier;
 use Exception as ExceptionAlias;
 use Kdyby\Console\DI\ConsoleExtension;
-use Kdyby\Doctrine\DI\OrmExtension;
 use Kdyby\Events\DI\EventsExtension;
 use Nette\DI\CompilerExtension;
 use Nette\DI\ContainerBuilder;
+use Nette\Reflection\ClassType;
+use Nette\Schema\Expect;
+use Nette\Schema\Schema;
+use Nette\Utils\Reflection;
 
 class CoreExtension extends CompilerExtension
 {
+    const TAG_ROUTER = 'devrun.modules.router';
 
-    public $defaults = array(
-        'cssUrlsFilterDir'      => '%wwwDir%',
-        'pageStorageExpiration' => '5 hours',
-        'update'                => [
-            'composer'      => false,
-            'composerWrite' => false,
-            'composerTags'  => '--no-interaction --ansi',
-            'migration'     => false,
-        ],
-    );
+    public function getConfigSchema(): Schema
+    {
+        return Expect::structure([
+            'pageStorageExpiration' => Expect::string('5 hours'),
+            'composerUpdate' => Expect::bool(false)->required(),
+            'composerWrite' => Expect::bool(false),
+            'composerTags' => Expect::string('--no-interaction --ansi'),
+            'migrationUpdate' => Expect::bool(false)->required(),
+        ]);
+    }
 
 
     public function loadConfiguration()
     {
         /** @var ContainerBuilder $builder */
         $builder = $this->getContainerBuilder();
-        $config  = $this->getConfig($this->defaults);
+
+        /** @var \stdClass $config */
+        $config  = $this->getConfig();
+
 
         // repositories
 
@@ -48,7 +55,7 @@ class CoreExtension extends CompilerExtension
         // facades
         $builder->addDefinition($this->prefix('facade.module'))
                 ->setType('Devrun\Module\ModuleFacade')
-                ->addSetup('setPageStorageExpiration', [$config['pageStorageExpiration']]);
+                ->addSetup('setPageStorageExpiration', [$config->pageStorageExpiration]);
 
 
         // system
@@ -67,8 +74,6 @@ class CoreExtension extends CompilerExtension
 //        $builder->addDefinition($this->prefix('authenticator'))
 //                ->setType('Devrun\Security\Authenticator')
 //                ->setInject();
-
-
 
         // http
         $builder->getDefinition('httpResponse')
@@ -93,14 +98,44 @@ class CoreExtension extends CompilerExtension
                     ->addTag(ConsoleExtension::TAG_COMMAND);
         }
 
+        // Modules provider
+        foreach ($this->compiler->getExtensions() as $extension) {
+            /*
+            if ($extension instanceof IParametersProvider) {
+                $this->setupParameters($extension);
+            }
+
+            if ($extension instanceof IPresenterMappingProvider) {
+                $this->setupPresenterMapping($extension);
+            }
+            */
+
+            if ($extension instanceof IRouterMappingProvider) {
+                $this->setupRouter($extension);
+            }
+
+            /*
+            if ($extension instanceof ILatteMacrosProvider) {
+                $this->setupMacros($extension);
+            }
+
+            if ($extension instanceof ITemplateHelpersProvider) {
+                $this->setupHelpers($extension);
+            }
+
+            if ($extension instanceof IErrorPresenterProvider){
+                $this->setupErrorPresenter($extension);
+            }
+            */
+        }
 
         // Subscribers
         $builder->addDefinition($this->prefix('subscriber.composer'))
-                ->setFactory(ComposerListener::class, [$config['update']['composer'], $config['update']['composerTags'], $config['update']['composerWrite']])
+                ->setFactory(ComposerListener::class, [$config->composerUpdate, $config->composerTags, $config->composerWrite])
                 ->addTag(EventsExtension::TAG_SUBSCRIBER);
 
         $builder->addDefinition($this->prefix('subscriber.migration'))
-                ->setFactory(MigrationListener::class, [$config['update']['migration']])
+                ->setFactory(MigrationListener::class, [$config->migrationUpdate])
                 ->addTag(EventsExtension::TAG_SUBSCRIBER);
 
 
@@ -138,6 +173,38 @@ class CoreExtension extends CompilerExtension
         }
 
     }
+
+
+    private function setupRouter(IRouterMappingProvider $extension)
+    {
+        $builder = $this->getContainerBuilder();
+        $router = $builder->getDefinition('router');
+
+        /** @var CompilerExtension $extension */
+        $name = $this->addRouteService(ClassType::from($extension)->getName());
+        $router->addSetup('offsetSet', array(NULL, $name));
+    }
+
+    /**
+     * @param string $class
+     * @return string
+     */
+    private function addRouteService($class)
+    {
+        $serviceName = md5($class);
+        $builder = $this->getContainerBuilder();
+
+        $builder->addDefinition($this->prefix('routeService.' . $serviceName))
+                ->setClass($class)
+                ->setInject(TRUE);
+
+        $builder->addDefinition('routerServiceFactory.' . $serviceName)
+                ->setFactory($this->prefix('@routeService.' . $serviceName) . '::getRoutesDefinition')
+                ->setAutowired(FALSE);
+
+        return '@routerServiceFactory.' . $serviceName;
+    }
+
 
 
 }

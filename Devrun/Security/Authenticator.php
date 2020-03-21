@@ -37,7 +37,7 @@ class Authenticator implements Nette\Security\IAuthenticator
      * @return \Nette\Security\Identity
      * @throws \Nette\Security\AuthenticationException
      */
-    public function authenticate(array $credentials)
+    public function authenticate(array $credentials): Nette\Security\IIdentity
     {
         list($username, $password) = $credentials;
 

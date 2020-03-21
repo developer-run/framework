@@ -10,7 +10,6 @@
 namespace Devrun\Application\UI\Presenter;
 
 use Devrun;
-use Flame\Application\UI\Presenter;
 use Kdyby\Translation\Translator;
 use Nette;
 use Tracy\Debugger;
@@ -21,7 +20,7 @@ use Tracy\Debugger;
  * @package Devrun\Application\UI\Presenter
  * @method onBeforeRender(Nette\Application\UI\Presenter $presenter)
  */
-class BasePresenter extends Presenter
+class BasePresenter extends Nette\Application\UI\Presenter
 {
 
     const BEFORE_RENDER_EVENT = 'Devrun\Application\UI\Presenter\BasePresenter::onBeforeRender';
@@ -158,24 +157,40 @@ class BasePresenter extends Presenter
     }
 
 
-
-
     /**
      * signal to clear cache
+     * @throws Nette\Application\AbortException
      */
     public function handleClearCache()
     {
         if ($dir = $this->getContext()->getParameters()['tempDir'] . '/cache') {
-            foreach (\Nette\Utils\Finder::findFiles('*')->from($dir) as $key => $file) {
-                @unlink($key);
-            }
-            $storage = new \Nette\Caching\Storages\FileStorage($dir);
-            $cache   = new \Nette\Caching\Cache($storage);
-            $cache->clean(array(\Nette\Caching\Cache::ALL => true));
+            opcache_reset();
+            \Devrun\Utils\FileTrait::purge($dir = dirname(__DIR__) . "/temp/cache");
             $this->redirect('this');
         }
 
     }
+
+
+    /**
+     * @param $name
+     * @param null $default
+     * @return null
+     */
+    public function getContextParameter($name, $default = null)
+    {
+        $params = $this->getContext()->getParameters();
+        return (isset($params[$name])) ? $params[$name] : $default;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isDebugMode()
+    {
+        return $this->getContextParameter('debugMode', false);
+    }
+
 
     /**
      * @return bool

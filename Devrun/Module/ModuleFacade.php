@@ -22,6 +22,7 @@ use Nette\Caching\Storages\FileStorage;
 use Nette\DI\Config\Adapters\NeonAdapter;
 use Nette\DI\Config\Adapters\PhpAdapter;
 use Nette\DI\Container;
+use Nette\DI\Helpers;
 use Nette\FileNotFoundException;
 use Nette\SmartObject;
 use Nette\Utils\Finder;
@@ -666,7 +667,7 @@ class ModuleFacade
         if (isset($this->modules[$name])) {
             $class = $this->modules[$name][self::MODULE_CLASS];
             if (!class_exists($class)) {
-                $path = $this->context->expand($this->modules[$name][self::MODULE_PATH]);
+                $path = Helpers::expand($this->modules[$name][self::MODULE_PATH], $this->context->getParameters());
                 require_once $path . '/Module.php';
             }
             return new $class;
@@ -832,7 +833,7 @@ class ModuleFacade
     {
         $ret = array();
         foreach ($this->modules as $name => $args) {
-            $path = $this->context->expand($args[self::MODULE_PATH]);
+            $path = Helpers::expand($args[self::MODULE_PATH], $this->context->getParameters());
             if (!file_exists($path)) {
                 $ret[$name] = $args;
             }

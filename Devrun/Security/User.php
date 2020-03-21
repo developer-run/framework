@@ -28,12 +28,6 @@ class User extends \Nette\Security\User
 	protected $_methodAllowed = array();
 
 
-    public function getIdentity()
-    {
-//        if ($this->isLoggedIn())
-        return parent::getIdentity();
-    }
-
 
     /**
 	 * Has a user effective access to the Resource?
@@ -42,7 +36,7 @@ class User extends \Nette\Security\User
 	 * @param  string  privilege
 	 * @return bool
 	 */
-	public function isAllowed($resource = IAuthorizator::ALL, $privilege = IAuthorizator::ALL)
+    public function isAllowed($resource = IAuthorizator::ALL, $privilege = IAuthorizator::ALL): bool
 	{
 		if ($resource instanceof \Nette\Reflection\Method) {
 			return $this->isMethodAllowedCached($resource);
