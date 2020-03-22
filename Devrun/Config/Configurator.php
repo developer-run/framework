@@ -15,6 +15,7 @@ use Devrun\DI\ImagesExtension;
 use Kdyby\Annotations\DI\AnnotationsExtension;
 use Kdyby\Console\DI\ConsoleExtension;
 use Kdyby\Events\DI\EventsExtension;
+use Kdyby\Monolog\DI\MonologExtension;
 use Kdyby\Translation\DI\TranslationExtension;
 use Nette\DI;
 use Nette\DI\Compiler;
@@ -316,9 +317,7 @@ class Configurator extends \Nette\Configurator
             $compiler->addExtension('console', new ConsoleExtension());
             $compiler->addExtension('annotations', new AnnotationsExtension());
             $compiler->addExtension('translation', new TranslationExtension());
-//            $compiler->addExtension('translatable', new TranslatableExtension());
-//            $compiler->addExtension('monolog', new MonologExtension());
-//            $compiler->addExtension('modules', new ModulesExtension());
+            $compiler->addExtension('monolog', new MonologExtension());
 //            $compiler->addExtension('debugger.session', new SessionPanelExtension());
 
             $compiler->addExtension('core', new Devrun\DI\CoreExtension());

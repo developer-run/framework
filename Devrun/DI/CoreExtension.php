@@ -11,6 +11,7 @@ namespace Devrun\DI;
 
 use Devrun\Listeners\ComposerListener;
 use Devrun\Listeners\MigrationListener;
+use Devrun\Module\Providers\IPresenterMappingProvider;
 use Devrun\Module\Providers\IRouterMappingProvider;
 use Devrun\Security\ControlVerifierReaders\AnnotationReader;
 use Devrun\Security\ControlVerifiers\ControlVerifier;
@@ -22,7 +23,7 @@ use Nette\DI\ContainerBuilder;
 use Nette\Reflection\ClassType;
 use Nette\Schema\Expect;
 use Nette\Schema\Schema;
-use Nette\Utils\Reflection;
+use Nette\Utils\Validators;
 
 class CoreExtension extends CompilerExtension
 {
@@ -32,10 +33,10 @@ class CoreExtension extends CompilerExtension
     {
         return Expect::structure([
             'pageStorageExpiration' => Expect::string('5 hours'),
-            'composerUpdate' => Expect::bool(false)->required(),
+            'composerUpdate' => Expect::bool(true)->required(false),
             'composerWrite' => Expect::bool(false),
             'composerTags' => Expect::string('--no-interaction --ansi'),
-            'migrationUpdate' => Expect::bool(false)->required(),
+            'migrationUpdate' => Expect::bool(true)->required(false),
         ]);
     }
 
@@ -104,11 +105,11 @@ class CoreExtension extends CompilerExtension
             if ($extension instanceof IParametersProvider) {
                 $this->setupParameters($extension);
             }
+            */
 
             if ($extension instanceof IPresenterMappingProvider) {
                 $this->setupPresenterMapping($extension);
             }
-            */
 
             if ($extension instanceof IRouterMappingProvider) {
                 $this->setupRouter($extension);
@@ -172,6 +173,18 @@ class CoreExtension extends CompilerExtension
             }
         }
 
+    }
+
+
+    private function setupPresenterMapping(IPresenterMappingProvider $extension)
+    {
+        $mapping = $extension->getPresenterMapping();
+        Validators::assert($mapping, 'array', 'mapping');
+
+        if (count($mapping)) {
+            $this->getContainerBuilder()->getDefinition('nette.presenterFactory')
+                 ->addSetup('setMapping', array($mapping));
+        }
     }
 
 
