@@ -16,7 +16,7 @@
 		"kdyby/events": "^3.2@dev",
 		"kdyby/fake-session": "^3.0",
 		"kdyby/translation": "^3.0@dev",
-		"contributte/image-storage": "^1.2@dev",
+		"contributte/image-storage": "v2.0.3",
 		"devrun/monolog": "^1.3@dev",
 
 		"ext-gd": "*",
@@ -31,7 +31,8 @@
 		"ext-openssl": "*"
 	},
 	"require-dev": {
-		"contributte/codeception": "^1.4@dev"
+		"contributte/codeception": "^1.4@dev",
+		"phpunit/phpunit-dom-assertions": "~2"
 	},
 	"repositories": [
 		{
