@@ -11,6 +11,7 @@ namespace Devrun\Storage;
 
 use Contributte\ImageStorage\Image;
 use Contributte\ImageStorage\Exception\ImageResizeException;
+use Devrun\Utils\Debugger;
 
 class ImageStorage extends \Contributte\ImageStorage\ImageStorage
 {

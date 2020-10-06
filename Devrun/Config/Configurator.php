@@ -58,7 +58,6 @@ class Configurator extends \Nette\Configurator
         parent::__construct();
         $this->sandbox     = $sandbox;
         $this->classLoader = $classLoader;
-
         try {
             umask(0000);
 

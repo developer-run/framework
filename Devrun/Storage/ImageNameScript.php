@@ -2,11 +2,11 @@
 
 namespace Devrun\Storage;
 
-class ImageNameScript extends \Ublaboo\ImageStorage\ImageNameScript
+class ImageNameScript extends \Contributte\ImageStorage\ImageNameScript
 {
 
 
-    public static function fromIdentifier($identifier)
+    public static function fromIdentifier($identifier): \Contributte\ImageStorage\ImageNameScript
     {
         return self::fromName($identifier);
     }
@@ -25,7 +25,7 @@ class ImageNameScript extends \Ublaboo\ImageStorage\ImageNameScript
      *
      * @return static
      */
-    public static function fromName($name)
+    public static function fromName($name): \Contributte\ImageStorage\ImageNameScript
     {
         $pattern = preg_replace('/__file__/', '(.*?)\/([^\/]*)\/([^\/]*)', self::PATTERN);
 

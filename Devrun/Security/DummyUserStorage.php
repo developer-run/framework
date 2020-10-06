@@ -41,7 +41,7 @@ class DummyUserStorage implements IUserStorage
      *
      * @return bool
      */
-    function isAuthenticated()
+    function isAuthenticated(): bool
     {
         return $this->authenticated;
     }
@@ -61,7 +61,7 @@ class DummyUserStorage implements IUserStorage
      *
      * @return Nette\Security\IIdentity|NULL
      */
-    function getIdentity()
+    function getIdentity(): ?IIdentity
     {
         return $this->identity;
     }
@@ -84,7 +84,7 @@ class DummyUserStorage implements IUserStorage
      *
      * @return int
      */
-    function getLogoutReason()
+    function getLogoutReason(): ?int
     {
         return NULL;
     }

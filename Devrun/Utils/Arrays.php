@@ -9,6 +9,8 @@
 
 namespace Devrun\Utils;
 
+use Nette\Utils\JsonException;
+
 /**
  * Class Arrays
  *
@@ -150,6 +152,39 @@ class Arrays
         return $aReturn;
     }
 
+    /**
+     * transform string array to array
+     *
+     * @param string $stringArray
+     * @return array
+     * @throws JsonException
+     */
+    public static function stringArrayToArray(string $stringArray): array
+    {
+        if ($stringArray) {
+            $_rawAttrs = preg_replace('%^\[%', '{', $stringArray);
+            $_rawAttrs = preg_replace('%]$%', '}', $_rawAttrs);
+            $_rawAttrs = str_replace('=>', ':', $_rawAttrs);
+            $_rawAttrs = str_replace('\'[', '[', $_rawAttrs);
+            $_rawAttrs = str_replace(']\'', ']', $_rawAttrs);
+            $_rawAttrs = str_replace('\'{', '{', $_rawAttrs);
+            $_rawAttrs = str_replace('}\'', '}', $_rawAttrs);
+            $_rawAttrs = str_replace('\'', '"', $_rawAttrs);
+
+            try {
+                $attrs = json_decode($_rawAttrs, true, 512, JSON_OBJECT_AS_ARRAY | JSON_THROW_ON_ERROR);
+                return $attrs;
+
+            } catch (\JsonException $exception) {
+                $example1 = '{"package":true, "page":false, "route":true, "data-toolbar":{"heading": true, "bold": true}, "class":"text-primary", "id":"test"}';
+                $example2 = '{"package":true, "page":false, "route":true, "data-toolbar":["heading", "bold", "italic"], "class":"text-primary", "id":"test"}';
+
+                throw new JsonException($exception->getMessage() . ", you have $_rawAttrs \nExample1 $example1\nExample2 $example2");
+            }
+        }
+
+        return [];
+    }
 
 
 }

@@ -4,6 +4,8 @@ namespace Devrun\Migrations;
 
 use Devrun\FileNotFoundException;
 use Devrun\Utils\EscapeColors;
+use Kdyby\Doctrine\Dbal\BatchImport\Helpers;
+use Nette\Utils\Validators;
 
 class Migration
 {
@@ -17,6 +19,7 @@ class Migration
      *
      * @param \Nette\DI\Container $container
      * @throws \Nextras\Migrations\Exception
+     * @throws \Nette\Utils\AssertionException
      */
     public static function reset(\Nette\DI\Container $container)
     {
@@ -31,7 +34,7 @@ class Migration
 
             } catch (\Exception $e) {
             }
-            \Kdyby\Doctrine\Helpers::loadFromFile($conn, $dbSnapshot);
+            Helpers::loadFromFile($conn, $dbSnapshot);
 
         } else {
             $controller = self::init($container, $conn);
@@ -40,6 +43,10 @@ class Migration
             $username = $container->parameters['database']['user'];
             $password = $container->parameters['database']['password'];
             $dbname = $container->parameters['database']['dbname'];
+
+            Validators::assert($username, 'string:1..', 'database.user');
+            Validators::assert($password, 'string:1..', 'database.password');
+            Validators::assert($dbname, 'string:1..', 'database.dbname');
 
             try {
                 echo(EscapeColors::fg_color("cyan", PHP_EOL . "make dump of generated migration..." . PHP_EOL));
@@ -118,7 +125,7 @@ class Migration
 
         if (file_exists($dumpSql = __DIR__ . '/dump.sql')) {
             if (self::$loadDump) {
-                \Kdyby\Doctrine\Helpers::loadFromFile($conn, $dumpSql);
+                Helpers::loadFromFile($conn, $dumpSql);
 
             } else {
 //                EscapeColors::all_bg();

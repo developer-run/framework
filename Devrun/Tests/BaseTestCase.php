@@ -6,17 +6,14 @@ use Devrun\ClassNotFoundException;
 use Devrun\Migrations\Migration;
 use Nette\DI\Container;
 use Nette\DI\MissingServiceException;
-use Nette\Environment;
 use Nette\Reflection\AnnotationsParser;
-use PHPUnit\Framework\DOMTestTrait;
 use PHPUnit\Framework\TestCase;
 
 class BaseTestCase extends TestCase {
 
-    use DOMTestTrait;
     use FileTestTrait;
 
-    public static $migrations = false;
+    public static $migrations = true;
 
 
     /**
@@ -28,6 +25,8 @@ class BaseTestCase extends TestCase {
     private function _injectServices($name = 'inject')
     {
         $reflectClass = new \ReflectionClass(get_called_class());
+
+
 
         foreach ($reflectClass->getProperties() as $property) {
             $res = AnnotationsParser::getAll($property);
@@ -79,7 +78,10 @@ class BaseTestCase extends TestCase {
         return (preg_replace('%^(.*)(\?.*)$%', '$1', $uri));
     }
 
-    public static function setUpBeforeClass()
+    /**
+     * @throws \Nextras\Migrations\Exception
+     */
+    public static function setUpBeforeClass(): void
     {
         try {
             $reflectClass = new \ReflectionClass(get_called_class());
@@ -97,7 +99,7 @@ class BaseTestCase extends TestCase {
 
 
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $everyTestNewContainer = false;
 

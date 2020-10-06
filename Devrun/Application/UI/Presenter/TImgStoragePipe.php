@@ -11,7 +11,6 @@ namespace Devrun\Application\UI\Presenter;
 
 use Devrun\Storage\ImageStorage;
 use Nette\Application\UI\ITemplate;
-use Nette\Application\UI\Presenter;
 
 trait TImgStoragePipe
 {
@@ -22,16 +21,6 @@ trait TImgStoragePipe
     /** @var bool is called createTemplate after inject? bug? fix this */
     private static $called = false;
 
-
-    protected function attached($presenter): void
-    {
-        if ($presenter instanceof Presenter) {
-            $this->template->_imgStorage = $this->imgStorage;
-            $this->template->proxyUrl = '';
-        }
-
-        parent::attached($presenter);
-    }
 
 
 

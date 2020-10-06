@@ -89,17 +89,18 @@ class BasePresenter extends Nette\Application\UI\Presenter
     /**
      * ajax redirect
      *
-     * @param string            $uri
-     * @param null|string|array $controlsToRedraw
-     * @param bool|string|array $redrawControls
+     * @param string|array $uri
+     * @param null|string|array $controls
+     * @param bool|string|array $snippets
+     * @throws Nette\Application\AbortException
      */
-    public function ajaxRedirect($uri = 'this', $controlsToRedraw = null, $redrawControls = true)
+    public function ajaxRedirect($uri = 'this', $controls = null, $snippets = true)
     {
         if ($this->isAjax()) {
-            if ($controlsToRedraw) {
+            if ($controls) {
 
-                if (is_array($controlsToRedraw)) {
-                    foreach ($controlsToRedraw as $controlToRedraw) {
+                if (is_array($controls)) {
+                    foreach ($controls as $controlToRedraw) {
                         if (isset($this[$controlToRedraw])) {
                             /** @var Nette\Application\UI\IRenderable $control */
                             $control = $this[$controlToRedraw];
@@ -110,9 +111,9 @@ class BasePresenter extends Nette\Application\UI\Presenter
                     }
 
                 } else {
-                    if (isset($this[$controlsToRedraw])) {
+                    if (isset($this[$controls])) {
                         /** @var Nette\Application\UI\IRenderable $control */
-                        $control = $this[$controlsToRedraw];
+                        $control = $this[$controls];
                         if ($control instanceof Nette\Application\UI\IRenderable) {
                             $control->redrawControl();
                         }
@@ -120,14 +121,14 @@ class BasePresenter extends Nette\Application\UI\Presenter
                 }
             }
 
-            if ($redrawControls) {
-                if (is_array($redrawControls)) {
-                    foreach ($redrawControls as $redrawControl) {
+            if ($snippets) {
+                if (is_array($snippets)) {
+                    foreach ($snippets as $redrawControl) {
                         $this->redrawControl($redrawControl);
                     }
 
-                } elseif (is_string($redrawControls)) {
-                    $this->redrawControl($redrawControls);
+                } elseif (is_string($snippets)) {
+                    $this->redrawControl($snippets);
 
                 } else {
                     $this->redrawControl();
@@ -135,7 +136,12 @@ class BasePresenter extends Nette\Application\UI\Presenter
             }
 
         } else {
-            $this->redirect($uri);
+            if (is_string($uri)) $this->redirect($uri);
+            elseif (is_array($uri)) {
+                if (count($uri) == 1) $this->redirect($uri[0]);
+                elseif (count($uri) == 2) $this->redirect($uri[0], $uri[1]);
+                elseif (count($uri) == 3) $this->redirect($uri[0], $uri[1], $uri[2]);
+            }
         }
     }
 
@@ -147,6 +153,7 @@ class BasePresenter extends Nette\Application\UI\Presenter
         $name = Nette\Utils\Strings::after($this->getName(), ":");
         $name .= ($this->action != 'default') ? $this->action : null;
 
+        $this->template->locale = $this->locale;
         $this->template->robots = "index, follow";
         $this->template->pageClass = trim(strtolower("$name {$this->locale}"));
         $this->template->production = Debugger::$productionMode;

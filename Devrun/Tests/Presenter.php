@@ -16,6 +16,7 @@ use Nette\Application\Request;
 use Nette\Application\Responses\TextResponse;
 use Nette\Security\User;
 use Nette\Utils\Validators;
+use PHPUnit\Framework\DOMTestTrait;
 
 
 class Presenter extends BaseTestCase
@@ -23,6 +24,8 @@ class Presenter extends BaseTestCase
 
     const PATTERN_ERROR = '%<ul class="errors"[^>]*>(.*?)</ul>%si';
     const PATTERN_FLASH = '%<div role="alert[^>]*>(.*?)</div>%si';
+
+    use DOMTestTrait;
 
 
     /** @var \Nette\Application\IPresenter */
@@ -294,7 +297,7 @@ class Presenter extends BaseTestCase
     }
 
 
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
 

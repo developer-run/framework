@@ -8,6 +8,7 @@ composer.phar
 /composer.lock
 /node_modules/
 /vendor/
+/log/
 
 ### Support template
 *.sh

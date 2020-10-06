@@ -3,6 +3,213 @@
 /**
  * run once
  */
+
+class BootstrapTest {
+
+    /** @var string */
+    private $appDir;
+
+    /** @var string */
+    private $vendorDir;
+
+    /** @var array */
+    private $robotLoaderDirs;
+
+    /**
+     * @return mixed
+     */
+    public function getAppDir()
+    {
+        if (null === $this->appDir) throw new \Devrun\InvalidArgumentException("setAppDir first");
+        return $this->appDir;
+    }
+
+    /**
+     * @param mixed $appDir
+     * @return BootstrapTest
+     */
+    public function setAppDir($appDir)
+    {
+        $this->appDir = $appDir;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getVendorDir()
+    {
+        if (null === $this->vendorDir) throw new \Devrun\InvalidArgumentException("setVendorDir first");
+        return $this->vendorDir;
+    }
+
+    /**
+     * @param mixed $vendorDir
+     * @return BootstrapTest
+     */
+    public function setVendorDir($vendorDir)
+    {
+        $this->vendorDir = $vendorDir;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getRobotLoaderDirs(): array
+    {
+        if (null === $this->robotLoaderDirs) throw new \Devrun\InvalidArgumentException("setRobotLoaderDirs first");
+        return $this->robotLoaderDirs;
+    }
+
+    /**
+     * @param array $robotLoaderDirs
+     * @return BootstrapTest
+     */
+    public function setRobotLoaderDirs(array $robotLoaderDirs): BootstrapTest
+    {
+        $this->robotLoaderDirs = $robotLoaderDirs;
+        return $this;
+    }
+
+
+
+
+
+    public function run()
+    {
+        $loader = require $this->getVendorDir() . '/autoload.php';
+
+        $configurator = new \Devrun\Config\Configurator($this->getAppDir(), $debugMode = null, $loader);
+
+        /*
+         * create and clear logs
+         */
+        $sandboxParameters = $configurator->getSandboxParameters();
+        $logDir = $sandboxParameters['logDir'] . DIRECTORY_SEPARATOR . 'tests';
+        if (!is_dir($logDir)) mkdir($logDir, 0755, true);
+        // \Devrun\Utils\FileTrait::eraseDirFromFiles($logDir, ['*.log', '*.html']);
+
+        /*
+         * create and clear cache
+         */
+        $sandboxParameters = $configurator->getSandboxParameters();
+        $tempDir = $sandboxParameters['tempDir'] . DIRECTORY_SEPARATOR . "tests";
+
+        $tempDir .= DIRECTORY_SEPARATOR . (isset($_SERVER['argv']) ? md5(serialize($_SERVER['argv'])) : getmypid());
+        echo(Devrun\Utils\EscapeColors::fg_color("blue", PHP_EOL . "temp) $tempDir" . PHP_EOL));
+
+        if (!is_dir($tempDir)) mkdir($tempDir, 0755, true);
+
+        // \Devrun\Utils\FileTrait::purge("$tempDir/cache");
+
+//        $configurator->setDebugMode(true);
+        $configurator->enableTracy($logDir);
+        $configurator->setTempDirectory($tempDir);
+
+
+
+        error_reporting(~E_USER_DEPRECATED); // note ~ before E_USER_DEPRECATED
+
+        $robotLoader = $configurator->createRobotLoader();
+        foreach ($this->getRobotLoaderDirs() as $robotLoaderDir) {
+            $robotLoader->addDirectory($robotLoaderDir);
+        }
+
+        $robotLoader
+//            ->addDirectory(dirname(__DIR__) . '/../front-module/src')
+            ->ignoreDirs += ['templates', 'test', 'resources'];
+        $robotLoader->register();
+
+        $environment = 'test';
+
+//        $configurator->addConfig(__DIR__ . '/../../../../app/config/config.neon');
+//        $configurator->addConfig(__DIR__ . "/../../../../app/config/config.$environment.neon");
+
+        $container = $configurator->createContainer();
+
+        return $container;
+
+    }
+}
+return;
+
+
+return (new BootstrapTest())
+    ->setVendorDir(__DIR__ . "/../../vendor")
+    ->setAppDir(dirname(__DIR__) . '/../tests')
+    ->run();
+
+return $test->run();
+
+return;
+
+$test = new BootstrapTest();
+$test->setAppDir(15);
+dump($test->getAppDir());
+dump($test);
+
+$a = class_alias("BootstrapTest", "MyBootstrapTest");
+dump($a);
+
+$b = new MyBootstrapTest();
+$b->setAppDir(18);
+dump($b->getAppDir());
+dump($b);
+
+
+dump(__FILE__);
+dump(__DIR__);
+dump(dirname(__DIR__));
+dump(dirname(dirname(__DIR__)));
+dump(dirname(dirname(dirname(__DIR__))));
+die;
+
+$loader = require __DIR__ . '/../../../../../vendor/autoload.php';
+
+$configurator = new \Devrun\Config\Configurator(dirname(__DIR__) . '/../../../app', $debugMode = null, $loader);
+
+/*
+ * clear logs
+ */
+$sandboxParameters = $configurator->getSandboxParameters();
+$logDir = $sandboxParameters['logDir'];
+\Devrun\Utils\FileTrait::eraseDirFromFiles($logDir, ['*.log', '*.html']);
+
+/*
+ * clear cache
+ */
+$sandboxParameters = $configurator->getSandboxParameters();
+$tempDir = $sandboxParameters['tempDir'];
+\Devrun\Utils\FileTrait::purge("$tempDir/cache");
+
+$appDir = $sandboxParameters['appDir'];
+
+dump($appDir);
+die;
+
+error_reporting(~E_USER_DEPRECATED); // note ~ before E_USER_DEPRECATED
+
+$robotLoader = $configurator->createRobotLoader();
+$robotLoader
+    ->addDirectory(dirname(__DIR__) . '/src')
+    ->addDirectory(dirname(__DIR__) . '/../front-module/src')
+    ->ignoreDirs .= ', templates, test, resources';
+$robotLoader->register();
+
+$environment = 'test';
+
+$configurator->addConfig(__DIR__ . '/../../../../app/config/config.neon');
+$configurator->addConfig(__DIR__ . "/../../../../app/config/config.$environment.neon");
+
+$container = $configurator->createContainer();
+
+return $container;
+
+
+
+
+
 //require __DIR__ . '/../../../vendor/autoload.php';
 //require_once __DIR__ . '/../../app/modules/cms-module/src/Security/DummyUserStorage.php';
 
