@@ -15,6 +15,7 @@ use Devrun\Module\Providers\IPresenterMappingProvider;
 use Devrun\Module\Providers\IRouterMappingProvider;
 use Devrun\Security\ControlVerifierReaders\AnnotationReader;
 use Devrun\Security\ControlVerifiers\ControlVerifier;
+use Devrun\Security\User;
 use Exception as ExceptionAlias;
 use Kdyby\Console\DI\ConsoleExtension;
 use Kdyby\Events\DI\EventsExtension;
@@ -61,13 +62,13 @@ class CoreExtension extends CompilerExtension
 
         // system
         $builder->addDefinition($this->prefix('controlVerifier'))
-                  ->setType(ControlVerifier::class);
+                ->setType(ControlVerifier::class);
 
         $builder->addDefinition($this->prefix('controlVerifierReader'))
-                  ->setType(AnnotationReader::class);
+                ->setType(AnnotationReader::class);
 
-        $builder->getDefinition('user')
-                ->setFactory('Devrun\Security\User');
+        $builder->getDefinition('security.user')
+                ->setFactory(User::class);
 
 //        $builder->addDefinition($this->prefix('authorizator'))
 //                ->setType('Devrun\Security\Authorizator');

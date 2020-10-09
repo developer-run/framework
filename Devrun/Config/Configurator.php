@@ -230,6 +230,9 @@ class Configurator extends \Nette\Configurator
         }
         $container->addService('configurator', $this);
 
+        // intl set default locale
+        \Locale::setDefault($container->parameters['lang'] ?? 'cs');
+
         return $container;
     }
 
