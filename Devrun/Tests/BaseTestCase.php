@@ -67,6 +67,20 @@ class BaseTestCase extends TestCase {
 
 
     /**
+     * @param string $neonConfig path
+     *
+     * @return array
+     */
+    protected function getProviderFromNeon(string $neonConfig): array
+    {
+        $this->assertFileExists($data = $neonConfig);
+
+        $neon = new \Nette\Neon\Neon();
+        return $neon->decode(file_get_contents($data));
+    }
+
+
+    /**
      * check uri
      *
      * @param string $uri uri

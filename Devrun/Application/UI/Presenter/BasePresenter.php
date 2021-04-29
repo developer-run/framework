@@ -93,10 +93,24 @@ class BasePresenter extends Nette\Application\UI\Presenter
      * @param null|string|array $controls
      * @param bool|string|array $snippets
      * @throws Nette\Application\AbortException
+     * @throws Nette\Application\UI\InvalidLinkException
      */
-    public function ajaxRedirect($uri = 'this', $controls = null, $snippets = true)
+    public function ajaxRedirect($uri = 'this', $controls = null, $snippets = true, $off = [])
     {
         if ($this->isAjax()) {
+            if ($uri && $uri != 'this') {
+                $url = null;
+                if (is_string($uri)) $url = $this->link($uri);
+                elseif (is_array($uri)) {
+                    if (count($uri) == 1) $url = $this->link($uri[0]);
+                    elseif (count($uri) == 2) $url = $this->link($uri[0], $uri[1]);
+                }
+
+                $this->payload->ajaxRedirect = $this->payload->url = $url;
+                $this->payload->off = $off;
+                return;
+            }
+
             if ($controls) {
 
                 if (is_array($controls)) {
@@ -161,6 +175,13 @@ class BasePresenter extends Nette\Application\UI\Presenter
         $this->onBeforeRender($this);
 
         $this->ajaxLayout();
+    }
+
+
+    public function getThisModuleName()
+    {
+        $exp = explode(":", $this->name);
+        return count($exp) == 2 ? strtolower($exp[0]) : strtolower($exp[1]);
     }
 
 

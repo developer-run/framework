@@ -12,10 +12,10 @@
 	],
 	"require": {
 		"php": "^7.3",
-		"nette/nette": "^v3.0@dev",
+		"nette/nette": "3.0.0",
 		"kdyby/events": "^3.2@dev",
 		"kdyby/fake-session": "^3.0",
-		"kdyby/translation": "^3.0@dev",
+		"kdyby/translation": "^3.0",
 		"contributte/image-storage": "v2.0.3",
 		"devrun/monolog": "^1.3@dev",
 
@@ -37,7 +37,7 @@
 	},
 	"repositories": [
 		{
-			"type": "vcs",
+			"type": "github",
 			"url": "https://github.com/developer-run/Monolog"
 		}
 	],

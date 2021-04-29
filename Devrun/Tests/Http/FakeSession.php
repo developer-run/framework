@@ -128,7 +128,8 @@ class FakeSession extends Nette\Http\Session
      */
     public function getSection($section, $class = 'Devrun\Tests\Http\FakeSessionSection'): Nette\Http\SessionSection
     {
-        return $this->sections[$section] = new $class($this, $section);
+        if (!isset($this->sections[$section])) $this->sections[$section] = new $class($this, $section);
+        return $this->sections[$section];
     }
 
 
