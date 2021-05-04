@@ -13,6 +13,7 @@ use Devrun\Listeners\ComposerListener;
 use Devrun\Listeners\MigrationListener;
 use Devrun\Module\Providers\IPresenterMappingProvider;
 use Devrun\Module\Providers\IRouterMappingProvider;
+use Devrun\Router\RouterFactory;
 use Devrun\Security\ControlVerifierReaders\AnnotationReader;
 use Devrun\Security\ControlVerifiers\ControlVerifier;
 use Devrun\Security\User;
@@ -80,6 +81,10 @@ class CoreExtension extends CompilerExtension
         // http
         $builder->getDefinition('httpResponse')
                   ->addSetup('setHeader', array('X-Powered-By', 'Nette Framework && Devrun:Framework'));
+
+        // router
+        $builder->addDefinition($this->prefix('router'))
+                ->setFactory(RouterFactory::class . '::createRouter');
 
         // Commands
         $commands = array(
@@ -192,7 +197,7 @@ class CoreExtension extends CompilerExtension
     private function setupRouter(IRouterMappingProvider $extension)
     {
         $builder = $this->getContainerBuilder();
-        $router = $builder->getDefinition('router');
+        $router = $builder->getDefinition($this->prefix('router'));
 
         /** @var CompilerExtension $extension */
         $name = $this->addRouteService(ClassType::from($extension)->getName());
@@ -209,8 +214,8 @@ class CoreExtension extends CompilerExtension
         $builder = $this->getContainerBuilder();
 
         $builder->addDefinition($this->prefix('routeService.' . $serviceName))
-                ->setClass($class)
-                ->setInject(TRUE);
+                ->setType($class)
+                ->addTag(\Nette\DI\Extensions\InjectExtension::TAG_INJECT);
 
         $builder->addDefinition('routerServiceFactory.' . $serviceName)
                 ->setFactory($this->prefix('@routeService.' . $serviceName) . '::getRoutesDefinition')

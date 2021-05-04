@@ -46,11 +46,15 @@
 		"kdyby/monolog": "Allow log to syslog service. This is conflict with tracy/tracy or something."
 	},
 	"autoload": {
-		"classmap": ["Devrun/"]
+		"classmap": ["Devrun/"],
+		"files": ["Devrun/Utils/Helpers.php"]
 	},
 	"extra": {
 		"branch-alias": {
 			"dev-master": "0.9-dev"
 		}
+	},
+	"scripts": {
+		"phpstan": "phpstan analyse Devrun --level=1"
 	}
 }

@@ -312,7 +312,7 @@ class Configurator extends \Nette\Bootstrap\Configurator
      *
      * @param Compiler $compiler
      */
-    public function _generateContainer(DI\Compiler $compiler): void
+    public function generateContainer(DI\Compiler $compiler): void
     {
         $this->onCompile[] = function (Configurator $config, Compiler $compiler) {
             $compiler->addExtension('events', new EventsExtension());
