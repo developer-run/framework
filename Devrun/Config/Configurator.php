@@ -29,7 +29,7 @@ use Nette\Loaders\RobotLoader;
  *
  * @package Devrun\Config
  */
-class Configurator extends \Nette\Configurator
+class Configurator extends \Nette\Bootstrap\Configurator
 {
 
     /** @var string|array */
@@ -44,7 +44,7 @@ class Configurator extends \Nette\Configurator
     /** @var Compiler */
     protected $compiler;
 
-    /** @var ClassLoader */
+    /** @var ClassLoader|null */
     protected $classLoader;
 
 
@@ -61,18 +61,15 @@ class Configurator extends \Nette\Configurator
         try {
             umask(0000);
 
-            if (NULL === $debugMode) {
-                $this->parameters['debugMode'] = NULL;
-            }
+            if ($debugMode) $this->addStaticParameters(['debugMode' => $debugMode]);
 
-            $this->parameters = array_merge($this->parameters, $this->getSandboxParameters());
+            $this->addStaticParameters($this->getSandboxParameters());
             $this->validateConfiguration();
-
-            $this->parameters = array_merge($this->parameters, $this->getDevrunDefaultParameters($this->parameters));
+            $this->addStaticParameters($this->getDevrunDefaultParameters($this->staticParameters));
             $this->loadModulesConfiguration();
 
-            $this->enableDebugger($this->parameters['logDir']);
-            $this->setTempDirectory($this->parameters['tempDir']);
+            $this->enableDebugger($this->staticParameters['logDir']);
+            $this->setTempDirectory($this->staticParameters['tempDir']);
 
             if ($this->classLoader) {
                 $this->registerModuleLoaders();
@@ -130,7 +127,7 @@ class Configurator extends \Nette\Configurator
 
         $settings = require $settingsFile;
 
-        $debugMode = isset($parameters['debugMode']) ? $parameters['debugMode'] : static::detectDebugMode($settings['debugIPs']);
+        $debugMode = isset($parameters['debugMode']) ?? static::detectDebugMode($settings['debugIPs']);
         $parameters['debugMode'] = $debugMode;
 
         $ret = array(
@@ -168,9 +165,7 @@ class Configurator extends \Nette\Configurator
 
     public static function detectEnvironment()
     {
-        return isset($_SERVER['SERVER_NAME'])
-            ? $_SERVER['SERVER_NAME']
-            : self::getSAPIEnvironment();
+        return $_SERVER['SERVER_NAME'] ?? self::getSAPIEnvironment();
     }
 
 
@@ -189,7 +184,7 @@ class Configurator extends \Nette\Configurator
 
     public function setEnvironment($name)
     {
-        $this->parameters['environment'] = $name;
+        $this->staticParameters['environment'] = $name;
         return $this;
     }
 
@@ -199,7 +194,7 @@ class Configurator extends \Nette\Configurator
      */
     public function getContainer()
     {
-        if (!$this->container) {
+        if (empty($this->container)) {
             $this->container = $this->createContainer();
         }
 
@@ -244,11 +239,11 @@ class Configurator extends \Nette\Configurator
     protected function getConfigFiles()
     {
         $ret = array();
-        $ret[] = $this->parameters['configDir'] . '/config.neon';
-        $ret[] = $this->parameters['configDir'] . "/config_{$this->parameters['environment']}.neon";
+        $ret[] = $this->staticParameters['configDir'] . '/config.neon';
+        $ret[] = $this->staticParameters['configDir'] . "/config_{$this->staticParameters['environment']}.neon";
 
         if (($agent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'admin') == 'admin') {
-            $ret[] = $this->parameters['configDir'] . "/config_admin.neon";
+            $ret[] = $this->staticParameters['configDir'] . "/config_admin.neon";
         }
 
         return $ret;
@@ -262,10 +257,10 @@ class Configurator extends \Nette\Configurator
         $mandatoryConfigs = array('settings.php', 'config.neon');
 
         foreach ($mandatoryConfigs as $config) {
-            if (!file_exists($this->parameters['configDir'] . '/' . $config)) {
-                if (file_exists($origFile = $this->parameters['configDir'] . '/' . $config . '.orig')) {
-                    if (is_writable($this->parameters['configDir']) && file_exists($origFile)) {
-                        copy($origFile, $this->parameters['configDir'] . '/' . $config);
+            if (!file_exists($this->staticParameters['configDir'] . '/' . $config)) {
+                if (file_exists($origFile = $this->staticParameters['configDir'] . '/' . $config . '.orig')) {
+                    if (is_writable($this->staticParameters['configDir']) && file_exists($origFile)) {
+                        copy($origFile, $this->staticParameters['configDir'] . '/' . $config);
                     } else {
                         throw new InvalidArgumentException("Config directory is not writable.");
                     }
@@ -282,8 +277,8 @@ class Configurator extends \Nette\Configurator
      */
     protected function loadModulesConfiguration()
     {
-        if (isset($this->parameters['modules'])) {
-            foreach ($this->parameters['modules'] as $items) {
+        if (isset($this->staticParameters['modules'])) {
+            foreach ($this->staticParameters['modules'] as $items) {
                 if ($items['status'] == Devrun\Module\ModuleFacade::STATUS_INSTALLED &&
                     file_exists($fileConfig = $items['path'] . DIRECTORY_SEPARATOR . "resources" . DIRECTORY_SEPARATOR . "config" . DIRECTORY_SEPARATOR . "config.neon")
                 ) {
@@ -296,8 +291,8 @@ class Configurator extends \Nette\Configurator
 
     protected function registerModuleLoaders()
     {
-        if (isset($this->parameters['modules'])) {
-            foreach ($this->parameters['modules'] as $items) {
+        if (isset($this->staticParameters['modules'])) {
+            foreach ($this->staticParameters['modules'] as $items) {
                 if (isset($items['autoload']['psr-0'])) {
                     foreach ($items['autoload']['psr-0'] as $key => $val) {
                         $this->classLoader->add($key, $items['path'] . '/' . $val);
@@ -312,7 +307,12 @@ class Configurator extends \Nette\Configurator
         }
     }
 
-    public function generateContainer(DI\Compiler $compiler): void
+    /**
+     * @todo check console and annotations extensions
+     *
+     * @param Compiler $compiler
+     */
+    public function _generateContainer(DI\Compiler $compiler): void
     {
         $this->onCompile[] = function (Configurator $config, Compiler $compiler) {
             $compiler->addExtension('events', new EventsExtension());

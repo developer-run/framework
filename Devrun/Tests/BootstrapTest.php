@@ -53,6 +53,12 @@ class BootstrapTest {
         return $this;
     }
 
+    public function hasRobotLoaderDirs(): bool
+    {
+        return null !== $this->robotLoaderDirs;
+    }
+
+
     /**
      * @return array
      */
@@ -107,9 +113,22 @@ class BootstrapTest {
         $configurator->enableTracy($logDir);
         $configurator->setTempDirectory($tempDir);
 
+//        error_reporting(~E_USER_DEPRECATED); // note ~ before E_USER_DEPRECATED
 
+        if (!$this->hasRobotLoaderDirs()) {
+            if ($dir = getcwd()) {
+                if ($modules = \Nette\Utils\Strings::before($dir, 'modules') . "modules/") {
+                    $directories = \Nette\Utils\Finder::findDirectories("*-module/src");
 
-        error_reporting(~E_USER_DEPRECATED); // note ~ before E_USER_DEPRECATED
+                    $dirs = [];
+                    foreach ($directories->from($modules) as $path => $item) {
+                        $dirs[] = $path;
+                    }
+
+                    $this->setRobotLoaderDirs($dirs);
+                }
+            }
+        }
 
         $robotLoader = $configurator->createRobotLoader();
         foreach ($this->getRobotLoaderDirs() as $robotLoaderDir) {
@@ -121,15 +140,21 @@ class BootstrapTest {
             ->ignoreDirs += ['templates', 'test', 'resources'];
         $robotLoader->register();
 
-        $environment = 'test';
 
-//        $configurator->addConfig(__DIR__ . '/../../../../app/config/config.neon');
-//        $configurator->addConfig(__DIR__ . "/../../../../app/config/config.$environment.neon");
+        $environment = 'test';
+        if ($dir = getcwd()) {
+            if ($config = \Nette\Utils\Strings::before($dir, 'app') . "app/config") {
+                if (file_exists($baseConfig = "$config/config.neon")) {
+                    $configurator->addConfig($baseConfig);
+                }
+                if (file_exists($envConfig = "$config/config_$environment.neon")) {
+                    $configurator->addConfig($envConfig);
+                }
+            }
+        }
 
         $container = $configurator->createContainer();
-
         return $container;
-
     }
 }
 return;

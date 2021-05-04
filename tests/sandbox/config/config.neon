@@ -17,7 +17,7 @@ events:
 	globalDispatchFirst: true
 
 translation:
-	debugger: on
+	debugger: true
 	default: %lang%
 	whitelist: %languages%
 	fallback: [cs_CZ, cs]
@@ -57,10 +57,10 @@ monolog:
 		netteFallback: Kdyby\Monolog\Handler\FallbackNetteHandler(monolog.logger.name, %logDir%)
 
 	name: Contests
-	hookToTracy: on
+	hookToTracy: true
 #    tracyBaseUrl: NULL
-	usePriorityProcessor: on
-	registerFallback: on
+	usePriorityProcessor: true
+#	registerFallback: true
 
 php:
 	date.timezone: Europe/Prague

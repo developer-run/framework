@@ -16,3 +16,4 @@ composer.phar
 *.yml
 *.json
 *.md
+*.cache
