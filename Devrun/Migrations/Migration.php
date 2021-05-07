@@ -38,7 +38,8 @@ class Migration
 
         } else {
             $controller = self::init($container, $conn);
-            $controller->run($action = 'run', $groups = ['structures', 'basic-data', 'dummy-data'], \Nextras\Migrations\Engine\Runner::MODE_RESET);
+            $controller->processArguments($action = 'run', $groups = ['structures', 'basic-data', 'dummy-data'], \Nextras\Migrations\Engine\Runner::MODE_RESET)
+                       ->run();
 
             $username = $container->parameters['database']['user'];
             $password = $container->parameters['database']['password'];
@@ -76,7 +77,8 @@ class Migration
         $conn = $em->getConnection();
 
         $controller = self::init($container, $conn);
-        $controller->run($action = 'run', $groups = ['structures', 'basic-data', 'production'], \Nextras\Migrations\Engine\Runner::MODE_CONTINUE);
+        $controller->processArguments($action = 'run', $groups = ['structures', 'basic-data', 'production'], \Nextras\Migrations\Engine\Runner::MODE_CONTINUE)
+                   ->run();
     }
 
 

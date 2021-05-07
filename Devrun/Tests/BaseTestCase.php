@@ -8,6 +8,7 @@ use Nette\DI\Container;
 use Nette\DI\MissingServiceException;
 use Nette\Reflection\AnnotationsParser;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Util\Test as TestUtil;
 
 class BaseTestCase extends TestCase {
 
@@ -118,7 +119,12 @@ class BaseTestCase extends TestCase {
         $everyTestNewContainer = false;
 
         if (!$everyTestNewContainer) {
-            $annotations = $this->getAnnotations();
+
+            $annotations = TestUtil::parseTestMethodAnnotations(
+                get_class($this),
+                $this->getName()
+            );
+
             $everyTestNewContainer = isset($annotations['method']['return']) || isset($annotations['method']['dataProvider']) || isset($annotations['method']['depends']);
         }
 
@@ -126,14 +132,17 @@ class BaseTestCase extends TestCase {
             /*
              * hack!, if some test methods is depending (previous method return) create new Container
              */
-            global $container;
+            global /** @var Container $container */
+            $container;
             global $_container;
 
             // $testMethod =$this->getName();
             // fwrite(STDOUT, $testMethod . "\n");
 
-            $container = Environment::getContext();
-            $container = new $_container;
+            $container = new $container;
+
+//            $container = Environment::getContext();
+//            $container = new $_container;
         }
 
         try {

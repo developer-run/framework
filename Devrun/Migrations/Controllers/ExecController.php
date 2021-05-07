@@ -9,11 +9,24 @@
 
 namespace Devrun\Migrations\Controllers;
 
+use Devrun\Migrations\Engine\Runner;
 use Nextras\Migrations\Controllers\BaseController;
 use Nextras\Migrations\Engine;
+use Nextras\Migrations\IDriver;
 
 class ExecController extends BaseController
 {
+
+
+    /**
+     * ExecController constructor.
+     */
+    public function __construct(IDriver $driver)
+    {
+        parent::__construct($driver);
+
+        $this->runner = new Runner($driver, $this->createPrinter());
+    }
 
 
     /**
@@ -22,9 +35,8 @@ class ExecController extends BaseController
      * @param string $mode
      * @throws \Nextras\Migrations\Exception
      */
-    public function run($action = null, $groups = [], $mode = Engine\Runner::MODE_CONTINUE)
+    public function run()
     {
-        $this->processArguments($action, $groups, $mode);
         $this->printHeader();
         $this->registerGroups();
         $this->runner->run($this->mode);
@@ -47,7 +59,7 @@ class ExecController extends BaseController
      * @param array $groups
      * @param string $mode
      */
-    private function processArguments($action, array $groups = [], $mode = Engine\Runner::MODE_CONTINUE)
+    public function processArguments($action, array $groups = [], $mode = Engine\Runner::MODE_CONTINUE): ExecController
     {
         $help = false;
         $useGroups = $error = FALSE;
@@ -88,6 +100,8 @@ class ExecController extends BaseController
             printf("  --help       show this help\n");
             exit(intval($error));
         }
+
+        return $this;
     }
 
 

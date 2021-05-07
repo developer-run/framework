@@ -17,6 +17,7 @@ use Kdyby\Console\DI\ConsoleExtension;
 use Kdyby\Events\DI\EventsExtension;
 use Kdyby\Monolog\DI\MonologExtension;
 use Kdyby\Translation\DI\TranslationExtension;
+use Nette;
 use Nette\DI;
 use Nette\DI\Compiler;
 use Nette\DI\Container;
@@ -38,7 +39,7 @@ class Configurator extends \Nette\Bootstrap\Configurator
     /** @var Container */
     protected $container;
 
-    /** @var RobotLoader */
+    /** @var RobotLoader|null */
     protected $robotLoader;
 
     /** @var Compiler */
@@ -220,7 +221,7 @@ class Configurator extends \Nette\Bootstrap\Configurator
         $container = parent::createContainer();
 
         // register robotLoader and configurator
-        if ($this->robotLoader) {
+        if ($this->robotLoader && !$container->hasService(get_class($this->robotLoader))) {
             $container->addService('robotLoader', $this->robotLoader);
         }
         $container->addService('configurator', $this);
@@ -232,6 +233,11 @@ class Configurator extends \Nette\Bootstrap\Configurator
     }
 
 
+    public function createRobotLoader(): Nette\Loaders\RobotLoader
+    {
+        return $this->robotLoader = parent::createRobotLoader();
+    }
+
 
     /**
      * @return array
@@ -242,7 +248,7 @@ class Configurator extends \Nette\Bootstrap\Configurator
         $ret[] = $this->staticParameters['configDir'] . '/config.neon';
         $ret[] = $this->staticParameters['configDir'] . "/config_{$this->staticParameters['environment']}.neon";
 
-        if (($agent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'admin') == 'admin') {
+        if (Devrun\CmsModule\Utils\Common::isAdminRequest()) {
             $ret[] = $this->staticParameters['configDir'] . "/config_admin.neon";
         }
 

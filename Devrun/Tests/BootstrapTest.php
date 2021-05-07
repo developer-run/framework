@@ -6,50 +6,96 @@
 
 class BootstrapTest {
 
-    /** @var string */
-    private $appDir;
+    /** @var string|array appDir or sandbox array */
+    private $sandbox;
 
     /** @var string */
-    private $vendorDir;
+    private $libsDir;
 
     /** @var array */
     private $robotLoaderDirs;
 
+    /** @var string */
+    private $logDir;
+
+    /** @var string */
+    private $tempDir;
+
+    /** @var string */
+    private $configDir;
+
+
     /**
      * @return mixed
      */
-    public function getAppDir()
+    public function getSandbox()
     {
-        if (null === $this->appDir) throw new \Devrun\InvalidArgumentException("setAppDir first");
-        return $this->appDir;
+        if (null === $this->sandbox) throw new \Devrun\InvalidArgumentException("setSandbox first");
+
+        return $this->sandbox;
     }
 
     /**
-     * @param mixed $appDir
+     * @param mixed $sandbox
      * @return BootstrapTest
      */
-    public function setAppDir($appDir)
+    public function setSandbox($sandbox): BootstrapTest
     {
-        $this->appDir = $appDir;
+        $this->sandbox = $sandbox;
+
+        if (is_array($sandbox)) $this->setParamsFromArray($sandbox);
+
+        return $this;
+    }
+
+
+    public function setParamsFromArray(array $params): BootstrapTest
+    {
+        foreach ($params as $dir => $path) {
+            if (method_exists($this, $method = "set" . ucfirst($dir))) {
+                $this->$method($path);
+            }
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * @return string
+     */
+    public function getConfigDir(): string
+    {
+        return $this->configDir;
+    }
+
+    /**
+     * @param string $configDir
+     * @return BootstrapTest
+     */
+    public function setConfigDir(string $configDir): BootstrapTest
+    {
+        $this->configDir = $configDir;
         return $this;
     }
 
     /**
      * @return mixed
      */
-    public function getVendorDir()
+    protected function getLibsDir()
     {
-        if (null === $this->vendorDir) throw new \Devrun\InvalidArgumentException("setVendorDir first");
-        return $this->vendorDir;
+        if (null === $this->libsDir) throw new \Devrun\InvalidArgumentException("setVendorDir first");
+        if (!is_dir($this->libsDir)) throw new \Devrun\InvalidArgumentException("vendorDir isn't correctly set");
+        return $this->libsDir;
     }
 
     /**
-     * @param mixed $vendorDir
+     * @param mixed $libsDir
      * @return BootstrapTest
      */
-    public function setVendorDir($vendorDir)
+    public function setLibsDir($libsDir): BootstrapTest
     {
-        $this->vendorDir = $vendorDir;
+        $this->libsDir = $libsDir;
         return $this;
     }
 
@@ -62,7 +108,7 @@ class BootstrapTest {
     /**
      * @return array
      */
-    public function getRobotLoaderDirs(): array
+    protected function getRobotLoaderDirs(): array
     {
         if (null === $this->robotLoaderDirs) throw new \Devrun\InvalidArgumentException("setRobotLoaderDirs first");
         return $this->robotLoaderDirs;
@@ -78,354 +124,152 @@ class BootstrapTest {
         return $this;
     }
 
-
-
-
-
-    public function run()
+    /**
+     * @return string
+     */
+    protected function getLogDir(): string
     {
-        $loader = require $this->getVendorDir() . '/autoload.php';
+        if (null === $this->logDir) throw new \Devrun\InvalidArgumentException("setLogDirs first");
+        if (!is_dir($this->logDir)) throw new \Devrun\InvalidArgumentException("logDir isn't correctly set");
+        return $this->logDir;
+    }
 
-        $configurator = new \Devrun\Config\Configurator($this->getAppDir(), $debugMode = null, $loader);
+    /**
+     * @param string $logDir
+     * @return BootstrapTest
+     */
+    public function setLogDir(string $logDir): BootstrapTest
+    {
+        $this->logDir = $logDir;
+        return $this;
+    }
 
-        /*
-         * create and clear logs
-         */
-        $sandboxParameters = $configurator->getSandboxParameters();
-        $logDir = $sandboxParameters['logDir'] . DIRECTORY_SEPARATOR . 'tests';
-        if (!is_dir($logDir)) mkdir($logDir, 0755, true);
-        // \Devrun\Utils\FileTrait::eraseDirFromFiles($logDir, ['*.log', '*.html']);
+    /**
+     * @return string
+     */
+    protected function getTempDir(): string
+    {
+        if (null === $this->tempDir) throw new \Devrun\InvalidArgumentException("setTempDirs first");
+        return $this->tempDir;
+    }
 
-        /*
-         * create and clear cache
-         */
-        $sandboxParameters = $configurator->getSandboxParameters();
-        $tempDir = $sandboxParameters['tempDir'] . DIRECTORY_SEPARATOR . "tests";
+    /**
+     * @param string $tempDir
+     * @return BootstrapTest
+     */
+    public function setTempDir(string $tempDir): BootstrapTest
+    {
+        if (!is_dir($tempDir)) throw new \Devrun\InvalidArgumentException("tempDir isn't correctly set");
+        $this->tempDir = $tempDir;
+        return $this;
+    }
 
+    /*
+     * create and clear logs
+     */
+    public function createTestLogDir(bool $erase = false): BootstrapTest
+    {
+        $logDir = $this->getLogDir();
+        $logDir .= DIRECTORY_SEPARATOR . 'tests';
+        \Nette\Utils\FileSystem::createDir($logDir, 0755);
+        if ($erase) \Devrun\Utils\FileTrait::eraseDirFromFiles($logDir, ['*.log', '*.html']);
+        $this->sandbox['logDir'] = $logDir;
+
+        return $this;
+    }
+
+    public function createTestTempDir(bool $erase = false): BootstrapTest
+    {
+        $tempDir = $this->getTempDir();
+        $tempDir .= DIRECTORY_SEPARATOR . 'tests';
         $tempDir .= DIRECTORY_SEPARATOR . (isset($_SERVER['argv']) ? md5(serialize($_SERVER['argv'])) : getmypid());
         echo(Devrun\Utils\EscapeColors::fg_color("blue", PHP_EOL . "temp) $tempDir" . PHP_EOL));
 
-        if (!is_dir($tempDir)) mkdir($tempDir, 0755, true);
+        \Nette\Utils\FileSystem::createDir($tempDir, 0755);
+        if ($erase) \Devrun\Utils\FileTrait::purge($tempDir);
+        $this->sandbox['tempDir'] = $tempDir;
 
-        // \Devrun\Utils\FileTrait::purge("$tempDir/cache");
+        return $this;
+    }
 
-//        $configurator->setDebugMode(true);
-        $configurator->enableTracy($logDir);
-        $configurator->setTempDirectory($tempDir);
+    /**
+     * @return \Nette\DI\Container
+     */
+    public function run(): \Nette\DI\Container
+    {
+        $loader = require $this->getLibsDir() . '/autoload.php';
 
-//        error_reporting(~E_USER_DEPRECATED); // note ~ before E_USER_DEPRECATED
+        $configurator = new \Devrun\Config\Configurator($this->getSandbox(), $debugMode = true, $loader);
 
-        if (!$this->hasRobotLoaderDirs()) {
-            if ($dir = getcwd()) {
-                if ($modules = \Nette\Utils\Strings::before($dir, 'modules') . "modules/") {
-                    $directories = \Nette\Utils\Finder::findDirectories("*-module/src");
+        // @todo fix this in next time
+        error_reporting(~E_USER_DEPRECATED); // note ~ before E_USER_DEPRECATED
 
-                    $dirs = [];
-                    foreach ($directories->from($modules) as $path => $item) {
-                        $dirs[] = $path;
-                    }
-
-                    $this->setRobotLoaderDirs($dirs);
-                }
+        if ($this->hasRobotLoaderDirs()) {
+            $robotLoader = $configurator->createRobotLoader();
+            foreach ($this->getRobotLoaderDirs() as $robotLoaderDir) {
+                $robotLoader->addDirectory($robotLoaderDir);
             }
-        }
 
-        $robotLoader = $configurator->createRobotLoader();
-        foreach ($this->getRobotLoaderDirs() as $robotLoaderDir) {
-            $robotLoader->addDirectory($robotLoaderDir);
-        }
+            $robotLoader
+                ->ignoreDirs += ['templates', 'tests', 'resources'];
+            $robotLoader->register();
 
-        $robotLoader
-//            ->addDirectory(dirname(__DIR__) . '/../front-module/src')
-            ->ignoreDirs += ['templates', 'test', 'resources'];
-        $robotLoader->register();
-
-
-        $environment = 'test';
-        if ($dir = getcwd()) {
-            if ($config = \Nette\Utils\Strings::before($dir, 'app') . "app/config") {
-                if (file_exists($baseConfig = "$config/config.neon")) {
-                    $configurator->addConfig($baseConfig);
-                }
-                if (file_exists($envConfig = "$config/config_$environment.neon")) {
-                    $configurator->addConfig($envConfig);
-                }
-            }
         }
 
         $container = $configurator->createContainer();
         return $container;
     }
 }
-return;
 
-
-return (new BootstrapTest())
-    ->setVendorDir(__DIR__ . "/../../vendor")
-    ->setAppDir(dirname(__DIR__) . '/../tests')
-    ->run();
-
-return $test->run();
-
-return;
-
-$test = new BootstrapTest();
-$test->setAppDir(15);
-dump($test->getAppDir());
-dump($test);
-
-$a = class_alias("BootstrapTest", "MyBootstrapTest");
-dump($a);
-
-$b = new MyBootstrapTest();
-$b->setAppDir(18);
-dump($b->getAppDir());
-dump($b);
-
-
-dump(__FILE__);
-dump(__DIR__);
-dump(dirname(__DIR__));
-dump(dirname(dirname(__DIR__)));
-dump(dirname(dirname(dirname(__DIR__))));
-die;
-
-$loader = require __DIR__ . '/../../../../../vendor/autoload.php';
-
-$configurator = new \Devrun\Config\Configurator(dirname(__DIR__) . '/../../../app', $debugMode = null, $loader);
-
-/*
- * clear logs
- */
-$sandboxParameters = $configurator->getSandboxParameters();
-$logDir = $sandboxParameters['logDir'];
-\Devrun\Utils\FileTrait::eraseDirFromFiles($logDir, ['*.log', '*.html']);
-
-/*
- * clear cache
- */
-$sandboxParameters = $configurator->getSandboxParameters();
-$tempDir = $sandboxParameters['tempDir'];
-\Devrun\Utils\FileTrait::purge("$tempDir/cache");
-
-$appDir = $sandboxParameters['appDir'];
-
-dump($appDir);
-die;
-
-error_reporting(~E_USER_DEPRECATED); // note ~ before E_USER_DEPRECATED
-
-$robotLoader = $configurator->createRobotLoader();
-$robotLoader
-    ->addDirectory(dirname(__DIR__) . '/src')
-    ->addDirectory(dirname(__DIR__) . '/../front-module/src')
-    ->ignoreDirs .= ', templates, test, resources';
-$robotLoader->register();
-
-$environment = 'test';
-
-$configurator->addConfig(__DIR__ . '/../../../../app/config/config.neon');
-$configurator->addConfig(__DIR__ . "/../../../../app/config/config.$environment.neon");
-
-$container = $configurator->createContainer();
-
-return $container;
-
-
-
-
-
-//require __DIR__ . '/../../../vendor/autoload.php';
-//require_once __DIR__ . '/../../app/modules/cms-module/src/Security/DummyUserStorage.php';
-
-
-//$configurator = new Nette\Configurator;
-//$configurator->setDebugMode(FALSE);
-//$configurator->setDebugMode(TRUE);
-
-use Devrun\Utils\EscapeColors;
-
-$configurator = new \Devrun\Config\Configurator($appDir = dirname(__DIR__) . '/../../../../app'/*, $loader*/);
-
-$sandboxParameters = $configurator->getSandboxParameters();
-
-if (!is_dir($log = $sandboxParameters['logDir'] . '/tests/')) {
-    mkdir($log);
-}
-//$configurator->enableDebugger($log);
-
-if (!is_dir($tmp = $sandboxParameters['tempDir'] . '/tests/')) {
-    mkdir($tmp);
-}
-
-//Tester\Helpers::purge($tmp);
-
-$tmp .= (isset($_SERVER['argv']) ? md5(serialize($_SERVER['argv'])) : getmypid());
-echo(EscapeColors::fg_color("blue", PHP_EOL . "temp) $tmp" . PHP_EOL));
-
-//var_dump($tmp);
-
-//Tester\Helpers::purge($tmp);
-
-define(TEMP_DIR, $tmp);
-if (!is_dir($tmp)) {
-    mkdir($tmp);
-}
-if (!is_dir($tmp . "/cache")) {
-    mkdir($tmp . "/cache");
-}
-
-// every delete fake test session
-$debugDirs = [
-//    'latte',
-//    '_routes',
-//    '_Air.Action',
-];
-foreach ($debugDirs as $debugDir) {
-    $deleteDir = $tmp . "/cache/$debugDir";
-    if (is_dir($deleteDir)) {
-        Tester\Helpers::purge($deleteDir);
-    }
-}
-
-
-$configurator->setDebugMode(true);
-$configurator->enableTracy($log);
-$configurator->setTempDirectory($tmp);
-
-
-
-//$configurator->enableDebugger();
-error_reporting(~E_USER_DEPRECATED); // note ~ before E_USER_DEPRECATED
-
-$robotLoader = $configurator->createRobotLoader();
-$robotLoader
-    ->addDirectory($appDir)
-    ->addDirectory(__DIR__)
-//    ->addDirectory(__DIR__ . '/../../../../../vendor/devrun') // developer mode only
-    ->ignoreDirs .= ', tests, test, resources';
-$robotLoader->register();
-
-$environment = 'test';
-
-$configurator->addConfig($appDir . '/config/config.neon');
-$configurator->addConfig($appDir . "/config/config.$environment.neon");
-
-if (($agent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'admin') == 'admin') {
-    $environment = 'admin';
-    $configurator->addConfig($appDir . "/config/config.$environment.neon");
-}
-
-$container = $configurator->createContainer();
-$container->getService('application')->errorPresenter = 'Front:Error';
-
-Devrun\Doctrine\DoctrineForms\ToManyContainer::register();
-
-
-
-//$container->removeService('nette.userStorage');
-//$container->addService('nette.userStorage', new \CmsModule\Security\DummyUserStorage());
-
-
-//TestInit::initDatabase($container);
-//TestInit::initMigrations($container);
-
-
-$_container = $container;
-
-return $container;
-
-
-class TestInit
-{
-    private static $loadDump = true;
-
-    static $initialized = false;
-
-
-
-    private static function migration(\Nette\DI\Container $container, $conn)
-    {
-        $dbal = new \Nextras\Migrations\Bridges\DoctrineDbal\DoctrineAdapter($conn);
-        $driver = new \Nextras\Migrations\Drivers\MySqlDriver($dbal);
-        $controller = new \Devrun\Migrations\Controllers\ExecController($driver);
-
-
-        $appDir = $container->parameters['appDir'];
-        $baseDir = $appDir . "/../migrations";
-
-        $controller->addGroup('structures', "$baseDir/structures");
-        $controller->addGroup('basic-data', "$baseDir/basic-data", array('structures'));
-        $controller->addGroup('dummy-data', "$baseDir/dummy-data", array('basic-data'));
-        $controller->addGroup('production', "$baseDir/production", array('basic-data'));
-        $controller->addExtension('sql', new \Nextras\Migrations\Extensions\SqlHandler($driver));
-        $controller->addExtension('php', new \Nextras\Migrations\Extensions\PhpHandler(['container' => $container]));
-
-        $controller->run($action = 'run', $groups = ['structures', 'basic-data', 'dummy-data'], \Nextras\Migrations\Engine\Runner::MODE_RESET);
+$_test_dir = getcwd();
+if ($caller = \Nette\Utils\Strings::before($_test_dir, 'framework')) {
+    $caller .= 'framework';
+
+    $sandbox = array(
+        'appDir'		=> dirname(__DIR__),
+        'baseDir'		=> $baseDir = dirname(dirname(__DIR__)),
+        'configDir'		=> $baseDir . '/tests/sandbox/config',
+        'dataDir'		=> $baseDir . '/tests/sandbox/data',
+        'modulesDir'	=> $baseDir . '/tests/sandbox/modules',
+        'migrationsDir'	=> $baseDir . '/tests/sandbox/migrations',
+        'libsDir'		=> $baseDir . '/vendor',
+        'logDir'		=> $baseDir . '/tests/sandbox/log',
+//        'logDir'		=> $baseDir . '/log', // system log dir
+        'tempDir'		=> $baseDir . '/tests/sandbox/temp',
+        'wwwDir'		=> $baseDir . '/tests/sandbox/www',
+        'imageDir'		=> $baseDir . '/tests/sandbox/www/images',
+        'wwwCacheDir'	=> $baseDir . '/tests/sandbox/www/cache',
+        'publicDir'		=> $baseDir . '/tests/sandbox/www/media',
+        'resourcesDir'	=> $baseDir . '/tests/sandbox/resources',
+    );
+
+    $container = (new BootstrapTest())
+        ->setSandbox($sandbox)
+        ->createTestLogDir(true)
+        ->createTestTempDir(true)
+        ->setRobotLoaderDirs([$sandbox['appDir']])
+        ->run();
+
+    unset($caller, $sandbox, $_test_dir);
+
+} elseif ($caller = \Nette\Utils\Strings::before($_test_dir, 'modules')) {
+    if (file_exists($sandbox = $caller . "/sandbox.php")) {
+        $caller .= 'modules';
+
+        $sandboxParameters = require_once $sandbox;
+
+        $container = (new BootstrapTest())
+            ->setSandbox($sandboxParameters)
+            ->createTestLogDir(true)
+            ->createTestTempDir(false)
+            ->setRobotLoaderDirs([$sandboxParameters['modulesDir'] ?? $caller])
+            ->run();
+
+        unset($caller, $sandboxParameters, $sandbox);
     }
 
-
-    public static function initMigrations(\Nette\DI\Container $container)
-    {
-        /** @var \Kdyby\Doctrine\EntityManager $em */
-        $em = $container->getByType('Kdyby\Doctrine\EntityManager');
-        $conn = $em->getConnection();
-
-        if (file_exists($dbSnapshot = TEMP_DIR . "/db-snapshot.sql")) {
-            echo(EscapeColors::fg_color("cyan", PHP_EOL . "init database from snapshot..." . PHP_EOL));
-            \Kdyby\Doctrine\Helpers::loadFromFile($conn, $dbSnapshot);
-
-        } else {
-            self::migration($container, $conn);
-
-            $username = $container->parameters['database']['user'];
-            $password = $container->parameters['database']['password'];
-            $dbname = $container->parameters['database']['dbname'];
-
-            echo(EscapeColors::fg_color("cyan", PHP_EOL . "make dump of generated migration..." . PHP_EOL));
-
-            $command = "mysqldump -u $username -p$password $dbname > $dbSnapshot";
-            exec($command);
-        }
-
-
-    }
-
-    /**
-     * @param \Nette\DI\Container $container
-     * @deprecated use initMigrations instead
-     */
-    public static function initDatabase(\Nette\DI\Container $container)
-    {
-        /** @var \Kdyby\Doctrine\EntityManager $em */
-        $em   = $container->getByType('Kdyby\Doctrine\EntityManager');
-        $conn = $em->getConnection();
-//        dump($appDir = $container->getParameters()['appDir']);
-
-        $conn->prepare("SET FOREIGN_KEY_CHECKS = 0")->execute();
-        //$conn->prepare("TRUNCATE TABLE users")->execute();
-//        $conn->prepare("TRUNCATE TABLE pexeso_settings_cards")->execute();
-//        $conn->prepare("TRUNCATE TABLE projects_versions")->execute();
-        //$conn->prepare("TRUNCATE TABLE members")->execute();
-        //$conn->prepare("TRUNCATE TABLE teammembers")->execute();
-//        $conn->prepare("TRUNCATE TABLE emails")->execute();
-//        $conn->prepare("TRUNCATE TABLE log")->execute();
-        $conn->prepare("SET FOREIGN_KEY_CHECKS = 1")->execute();
-
-        if (file_exists($dumpSql = __DIR__ . '/dump.sql')) {
-            if (self::$loadDump) {
-                \Kdyby\Doctrine\Helpers::loadFromFile($conn, $dumpSql);
-
-            } else {
-//                EscapeColors::all_bg();
-//                EscapeColors::all_fg();
-                echo(EscapeColors::bg_color("magenta", PHP_EOL . strtoupper("--- load `dump.sql` is off ---") . PHP_EOL . PHP_EOL));
-            }
-
-        }
-
-
-
-    }
+} else {
+    throw new \Devrun\NotSupportedException("unknown test, you must use other bootstrap.");
 }
 
+return $_container = $container;
