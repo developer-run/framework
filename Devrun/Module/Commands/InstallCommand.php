@@ -95,6 +95,7 @@ class InstallCommand extends Command
                 }
             }
             $this->moduleManager->install($module);
+            $this->moduleManager->onInstalled($this->moduleManager, $module);
             $output->writeln("Module '{$input->getArgument('module')}' has been installed.");
         } catch (InvalidArgumentException $e) {
             $output->writeln("<error>{$e->getMessage()}</error>");

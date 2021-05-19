@@ -7,6 +7,7 @@ use Devrun\Migrations\Migration;
 use Nette\DI\Container;
 use Nette\DI\MissingServiceException;
 use Nette\Reflection\AnnotationsParser;
+use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Util\Test as TestUtil;
 
@@ -63,6 +64,7 @@ class BaseTestCase extends TestCase {
 //        Environment::loadConfig();
 
 //        return Environment::getContext();
+        Assert::assertArrayHasKey('container', $GLOBALS, 'Zřejmě není spuštěn TestBootstrap, container not exist');
         return $GLOBALS['container'];
     }
 

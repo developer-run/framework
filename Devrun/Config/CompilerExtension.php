@@ -11,7 +11,6 @@ namespace Devrun\Config;
 
 use Devrun;
 use Nette;
-use Tracy\Debugger;
 
 class CompilerExtension extends \Nette\DI\CompilerExtension
 {
@@ -43,64 +42,39 @@ class CompilerExtension extends \Nette\DI\CompilerExtension
     }
 
 
-    public function beforeCompile()
-    {
-        parent::beforeCompile();
-
-        $builder = $this->getContainerBuilder();
-        $config  = $this->getConfig();
-
-        // zatím se budeme spoléhat na standardní nette tag
-        if ($presenters = $builder->findByTag(self::TAG_DEVRUN_PRESENTER)) {
-
-            $modules = $this->getModuleNameList($builder);
-
-//            dump($presenters);
-//            dump($modules);
-
-//            die();
-
-            foreach ($presenters as $presenter => $class) {
-                $definition = $builder->getDefinition($presenter);
-                $moduleName = Nette\Utils\Strings::before($presenter, '.');
-
-                if (!in_array($moduleName, $modules)) {
-                    throw new Devrun\InvalidArgumentException(sprintf("Presenter %s not register correctly, use correct existing modules [%s]",$presenter, implode(', ', $modules)));
-                }
-
-                if ($moduleName != $this->name) continue;
-
-//                dump($this->name);
-//                dump($definition->getClass());
-//                dump($class);
-//                dump($config);
-//                dump($presenters);
-
-                /**
-                 * @deprecated
-                 */
-                if (method_exists($_class = $definition->getClass(), 'setWebLoaderCollections')) {
-                    if (isset($config['webloader'])) {
-                        $definition->addSetup('setWebLoaderCollections', [$config['webloader']]);
-                    }
-                }
-            }
-        }
-
-    }
 
     /**
-     * @param $tag
+     * return sorted services by priority
+     *
+     * @param string|array $tag  [ tag,  array(tag1, tag2)  ]
      * @return array
      */
-    protected function getSortedServices($tag)
+    protected function getSortedServices($tag): array
     {
         $builder = $this->getContainerBuilder();
 
+        $ret   = array();
         $items = array();
-        $ret = array();
-        foreach ($builder->findByTag($tag) as $route => $meta) {
-            $priority = isset($meta['priority']) ? $meta['priority'] : (int)$meta;
+
+        if (is_array($tag)) {
+            $services =  array_map( function ($service_tag) use ($builder) {
+                return $builder->findByTag($service_tag);
+
+            }, $tag);
+
+            $mergeServices = [];
+            array_walk($services, function ($service) use (&$mergeServices) {
+                $mergeServices = array_merge($mergeServices, $service);
+            });
+
+            $services = $mergeServices;
+
+        } else {
+            $services = $builder->findByTag($tag);
+        }
+
+        foreach ($services as $route => $meta) {
+            $priority = $meta['priority'] ?? (int)$meta;
             $items[$priority][] = $route;
         }
 

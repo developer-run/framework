@@ -35,6 +35,7 @@ use Nette\Utils\Strings;
  * @method onRegister(ModuleFacade $moduleFacade, $module);
  * @method onUnRegister(ModuleFacade $moduleFacade, $module);
  * @method onInstall(ModuleFacade $moduleFacade, $module);
+ * @method onInstalled(ModuleFacade $moduleFacade, $module);
  * @method onUninstall(ModuleFacade $moduleFacade, $module);
  * @method onUpgrade(ModuleFacade $moduleFacade, $module);
  * @method onUpdate(ModuleFacade $moduleFacade);
@@ -43,7 +44,6 @@ class ModuleFacade
 {
     use SmartObject;
     use FileTrait;
-
 
     const MODULE_CLASS = 'class';
 
@@ -77,6 +77,9 @@ class ModuleFacade
 
     /** @var array */
     public $onInstall = [];
+
+    /** @var array */
+    public $onInstalled = [];
 
     /** @var array */
     public $onUninstall = [];
@@ -150,6 +153,8 @@ class ModuleFacade
     /** @var string */
     private $pageStorageExpiration = '30 minutes';
 
+    /** @var bool Container test php valid if set [declare(strict_types=1)  is problem, this is not on first line] */
+    private $validateContainer = false;
 
     /**
      * ModuleFacade constructor.
@@ -196,22 +201,26 @@ class ModuleFacade
 
     /**
      * Reload system container.
-     * @todo not implemented yet
      */
     protected function reloadSystemContainer()
     {
-        return;
-
-
         /** @var $configurator Configurator */
-        $configurator = $this->context->configurator;
-        $class = $this->context->parameters['container']['class'] . $this->_systemContainer++;
-        LimitedScope::evaluate($configurator->buildContainer($dependencies, $class));
+        $configurator = $this->context->getByName('configurator');
 
-        /** @var context Container */
-        $this->context = new $class;
-        $this->context->parameters = (include $this->configDir . '/settings.php') + $this->context->parameters;
-        $this->context->initialize();
+        if ($this->validateContainer) {
+            $content = file_get_contents(get_class($configurator->getContainer()));
+            \Devrun\Utils\LimitedScope::evaluate($content);
+        }
+        
+        $configurator->addStaticParameters(['gen' => $this->_systemContainer++ ]);
+        
+        $container = $configurator->createContainer();
+
+        $this->context = $container;
+        $this->context->parameters['container']['class'] . $this->_systemContainer++;
+        // $this->context->initialize();
+            
+        $this->context->removeService("configurator");
         $this->context->addService("configurator", $configurator);
     }
 
@@ -659,10 +668,10 @@ class ModuleFacade
     /**
      * Create instance of module.
      *
-     * @param $name
+     * @param string $name
      * @return IModule
      */
-    public function createInstance($name)
+    public function createInstance(string $name): IModule
     {
         if (isset($this->modules[$name])) {
             $class = $this->modules[$name][self::MODULE_CLASS];

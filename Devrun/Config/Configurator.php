@@ -62,19 +62,26 @@ class Configurator extends \Nette\Bootstrap\Configurator
         try {
             umask(0000);
 
-            if ($debugMode) $this->addStaticParameters(['debugMode' => $debugMode]);
+            if ($debugMode !== null) $this->addStaticParameters(['debugMode' => $debugMode]);
 
             $this->addStaticParameters($this->getSandboxParameters());
             $this->validateConfiguration();
             $this->addStaticParameters($this->getDevrunDefaultParameters($this->staticParameters));
-            $this->loadModulesConfiguration();
 
-            $this->enableDebugger($this->staticParameters['logDir']);
+            $this->addConfigFiles();
+
+            // deprecated
+            // $this->addModulesConfigFiles();
+            
+            $this->enableTracy($this->staticParameters['logDir']);
             $this->setTempDirectory($this->staticParameters['tempDir']);
 
             if ($this->classLoader) {
                 $this->registerModuleLoaders();
             }
+
+            $this->registerDefaultExtensions();
+
         } catch (InvalidArgumentException $e) {
             die($e->getMessage());
         }
@@ -128,7 +135,7 @@ class Configurator extends \Nette\Bootstrap\Configurator
 
         $settings = require $settingsFile;
 
-        $debugMode = isset($parameters['debugMode']) ?? static::detectDebugMode($settings['debugIPs']);
+        $debugMode = $parameters['debugMode'] ?? static::detectDebugMode($settings['debugIPs']);
         $parameters['debugMode'] = $debugMode;
 
         $ret = array(
@@ -170,7 +177,7 @@ class Configurator extends \Nette\Bootstrap\Configurator
     }
 
 
-    protected static function getSAPIEnvironment()
+    protected static function getSAPIEnvironment(): ?string
     {
         $env = [
             'cli'      => 'test',
@@ -183,7 +190,7 @@ class Configurator extends \Nette\Bootstrap\Configurator
     }
 
 
-    public function setEnvironment($name)
+    public function setEnvironment($name): Configurator
     {
         $this->staticParameters['environment'] = $name;
         return $this;
@@ -193,7 +200,7 @@ class Configurator extends \Nette\Bootstrap\Configurator
     /**
      * @return Container
      */
-    public function getContainer()
+    public function getContainer(): Container
     {
         if (empty($this->container)) {
             $this->container = $this->createContainer();
@@ -208,15 +215,6 @@ class Configurator extends \Nette\Bootstrap\Configurator
      */
     public function createContainer(): DI\Container
     {
-        // add config files
-        foreach ($this->getConfigFiles() as $file) {
-            if (!file_exists($file)) {
-                @touch($file);
-            }
-
-            $this->addConfig($file);
-        }
-
         // create container
         $container = parent::createContainer();
 
@@ -224,7 +222,9 @@ class Configurator extends \Nette\Bootstrap\Configurator
         if ($this->robotLoader && !$container->hasService(get_class($this->robotLoader))) {
             $container->addService('robotLoader', $this->robotLoader);
         }
-        $container->addService('configurator', $this);
+        if (!$container->hasService('configurator')) {
+            $container->addService('configurator', $this);
+        }
 
         // intl set default locale
         \Locale::setDefault($container->parameters['lang'] ?? 'cs');
@@ -239,10 +239,22 @@ class Configurator extends \Nette\Bootstrap\Configurator
     }
 
 
+    protected function addConfigFiles()
+    {
+        // add config files
+        foreach ($this->getConfigFiles() as $file) {
+            if (!file_exists($file)) {
+                @touch($file);
+            }
+
+            $this->addConfig($file);
+        }
+    }
+
     /**
      * @return array
      */
-    protected function getConfigFiles()
+    protected function getConfigFiles(): array
     {
         $ret = array();
         $ret[] = $this->staticParameters['configDir'] . '/config.neon';
@@ -279,9 +291,10 @@ class Configurator extends \Nette\Bootstrap\Configurator
 
 
     /**
+     * @deprecated use loadDefinitionsFromConfig in extension instead
      * load default module config
      */
-    protected function loadModulesConfiguration()
+    protected function addModulesConfigFiles()
     {
         if (isset($this->staticParameters['modules'])) {
             foreach ($this->staticParameters['modules'] as $items) {
@@ -315,10 +328,42 @@ class Configurator extends \Nette\Bootstrap\Configurator
 
     /**
      * @todo check console and annotations extensions
+     */
+    protected function registerDefaultExtensions()
+    {
+        /** @var array */
+        $defaultExtensions = [
+            'events' => EventsExtension::class,
+            'console' => ConsoleExtension::class,
+            'annotations' => AnnotationsExtension::class,
+            'translation' => TranslationExtension::class,
+            'monolog' => MonologExtension::class,
+            'core' => Devrun\DI\CoreExtension::class,
+            'imageStorage' => ImagesExtension::class,
+            //'debugger.session' => SessionPanelExtension::class,
+        ];
+
+        $this->onCompile[] = function (Configurator $config, Compiler $compiler) use ($defaultExtensions) {
+            foreach ($defaultExtensions as $name => $extension) {
+                /** @var string|DI\CompilerExtension $class */
+                [$class, $args] = is_string($extension)
+                    ? [$extension, []]
+                    : $extension;
+                if (class_exists($class)) {
+                    $args = DI\Helpers::expand($args, $this->staticParameters);
+                    $compiler->addExtension($name, (new \ReflectionClass($class))->newInstanceArgs($args));
+                }
+            }
+        };
+    }
+
+
+    /**
+     * @deprecated
      *
      * @param Compiler $compiler
      */
-    public function generateContainer(DI\Compiler $compiler): void
+    public function DeprecatedGenerateContainer(DI\Compiler $compiler): void
     {
         $this->onCompile[] = function (Configurator $config, Compiler $compiler) {
             $compiler->addExtension('events', new EventsExtension());

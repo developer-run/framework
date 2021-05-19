@@ -9,6 +9,7 @@
 
 namespace Devrun\DI;
 
+use Devrun\Config\CompilerExtension;
 use Devrun\Listeners\ComposerListener;
 use Devrun\Listeners\MigrationListener;
 use Devrun\Module\Providers\IPresenterMappingProvider;
@@ -20,16 +21,18 @@ use Devrun\Security\User;
 use Exception as ExceptionAlias;
 use Kdyby\Console\DI\ConsoleExtension;
 use Kdyby\Events\DI\EventsExtension;
-use Nette\DI\CompilerExtension;
+use Nette\Application\Routers\RouteList;
 use Nette\DI\ContainerBuilder;
 use Nette\Reflection\ClassType;
+use Nette\Reflection\Method;
 use Nette\Schema\Expect;
 use Nette\Schema\Schema;
 use Nette\Utils\Validators;
 
 class CoreExtension extends CompilerExtension
 {
-    const TAG_ROUTER = 'devrun.modules.router';
+    const TAG_ROUTE = 'devrun.route';
+    const TAG_ROUTE_FACTORY = 'devrun.route.factory';
 
     public function getConfigSchema(): Schema
     {
@@ -84,7 +87,7 @@ class CoreExtension extends CompilerExtension
 
         // router
         $builder->addDefinition($this->prefix('router'))
-                ->setFactory(RouterFactory::class . '::createRouter');
+                ->setFactory(RouteList::class );
 
         // Commands
         $commands = array(
@@ -157,16 +160,17 @@ class CoreExtension extends CompilerExtension
         $moduleFacade = $builder->getDefinition($this->prefix('facade.module'));
         $moduleFacade->addSetup('setModulesPath', [$builder->parameters['modules']]);
 
-        $this->checkDirStructure();
+        $this->sortingRoutes();
+
+        // off this not use yet
+        //$this->checkDirStructure();
     }
 
 
     private function checkDirStructure()
     {
         $builder     = $this->getContainerBuilder();
-        $systemPaths = [
-            $builder->parameters['wwwCacheDir'],
-        ];
+        $systemPaths = [];
 
         foreach ($systemPaths as $systemPath) {
             if (!is_dir($systemPath)) {
@@ -178,7 +182,6 @@ class CoreExtension extends CompilerExtension
                 }
             }
         }
-
     }
 
 
@@ -194,21 +197,63 @@ class CoreExtension extends CompilerExtension
     }
 
 
+    /**
+     * after compile setup router by priority
+     */
+    private function sortingRoutes()
+    {
+        /** @var ContainerBuilder $builder */
+        $builder = $this->getContainerBuilder();
+
+        $router = $builder->getDefinition($this->prefix('router'));
+
+        foreach ($this->getSortedServices([self::TAG_ROUTE, self::TAG_ROUTE_FACTORY]) as $route) {
+            $definition = $builder->getDefinition($route);
+
+            if (isset($definition->getTags()[self::TAG_ROUTE_FACTORY])) {
+                $router->addSetup('$service[] = $this->getService(?)->create()', array($route));
+
+            } else {
+                $definition->setAutowired(FALSE);
+                $router->addSetup('$service[] = $this->getService(?)', array($route));
+            }
+        }
+    }
+
+
+    /**
+     * @param IRouterMappingProvider $extension
+     * @throws \Nette\Utils\AssertionException
+     */
     private function setupRouter(IRouterMappingProvider $extension)
     {
         $builder = $this->getContainerBuilder();
         $router = $builder->getDefinition($this->prefix('router'));
 
+        $class = ClassType::from($extension)->getName();
+
+        $method = Method::from($class, 'getRoutesDefinition');
+
+        $priority = 100;
+        if ($method->hasAnnotation('priority')) {
+            $priority = $method->getAnnotation('priority');
+            Validators::assert($priority, 'integer', "$class getRoutesDefinition() priority");
+        }
+
         /** @var CompilerExtension $extension */
-        $name = $this->addRouteService(ClassType::from($extension)->getName());
-        $router->addSetup('offsetSet', array(NULL, $name));
+        $name = $this->addRouteService(ClassType::from($extension)->getName(), $priority);
+
+        // off addSetup this time, is set after compile, there is sorting
+        //$router->addSetup('offsetSet', array(NULL, $name));
     }
 
     /**
+     *
      * @param string $class
+     * @param int $priority
      * @return string
      */
-    private function addRouteService($class)
+    private function addRouteService(string $class, int $priority = 100): string
     {
         $serviceName = md5($class);
         $builder = $this->getContainerBuilder();
@@ -219,7 +264,8 @@ class CoreExtension extends CompilerExtension
 
         $builder->addDefinition('routerServiceFactory.' . $serviceName)
                 ->setFactory($this->prefix('@routeService.' . $serviceName) . '::getRoutesDefinition')
-                ->setAutowired(FALSE);
+                ->setAutowired(FALSE)
+                ->addTag(self::TAG_ROUTE, $priority);
 
         return '@routerServiceFactory.' . $serviceName;
     }

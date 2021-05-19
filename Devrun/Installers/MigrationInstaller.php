@@ -17,6 +17,9 @@ use Tracy\ILogger;
 class MigrationInstaller implements IInstaller
 {
 
+    // rename files by mask Y-m-HIS [actual time]
+    const TIME_RENAMING = false;
+
     use FileTrait;
 
     const MODE_RESET    = 'reset';
@@ -145,13 +148,10 @@ class MigrationInstaller implements IInstaller
                                        }
 
                                        return false;
-
                                    })
                                    ->from($dir);
 
-                            if ($files) {
-                                $this->copyOriginalFiles($module, $files);
-                            }
+                            $this->copyOriginalFiles($module, $files);
                         }
                     }
                 }
@@ -175,37 +175,43 @@ class MigrationInstaller implements IInstaller
 
     /**
      * @param IModule $module
-     * @param $files
+     * @param Finder $files
      */
-    protected function copyOriginalFiles(IModule $module, $files)
+    protected function copyOriginalFiles(IModule $module, Finder $files)
     {
-        static $index = 1;
+        if ($files->count()) {
+            static $index = 1;
 
-        if (is_dir($dir = "{$module->getPath()}/resources/migrations")) {
-            $sourcesSort = [];
-            foreach ($files as $file => $spl) {
-                $sourcesSort[basename($file)] = $file;
-            }
+            if (is_dir($dir = "{$module->getPath()}/resources/migrations")) {
+                $sourcesSort = [];
+                foreach ($files as $file => $spl) {
+                    $sourcesSort[basename($file)] = $file;
+                }
 
-            ksort($sourcesSort);
+                ksort($sourcesSort);
 
-            /*
-             * copy original migration files to actual time + index files
-             */
-            foreach ($sourcesSort as $file) {
-                $timeStr     = date("Y-m-d-His");
-                $relativeDir = Strings::after($file, $dir);
+                /*
+                 * copy original migration files to actual time + index files
+                 */
+                foreach ($sourcesSort as $file) {
+                    if ($relativeDir = Strings::after($file, $dir)) {
 
-                $replacement = $timeStr . "-" . str_pad($index, 3, '0', STR_PAD_LEFT);
-                $newFileName = Strings::replace($relativeDir, "((19|20|21)(\d{2}-\d{2}-\d{2}-)\d{6})", $replacement);
-                $newPath     = $this->migrationsDir . $newFileName;
+                        if (self::TIME_RENAMING) {
+                            $timeStr     = date("Y-m-d-His");
+                            $replacement = $timeStr . "-" . str_pad($index, 3, '0', STR_PAD_LEFT);
+                            $newFileName = Strings::replace($relativeDir, "((19|20|21)(\d{2}-\d{2}-\d{2}-)\d{6})", $replacement);
+                            $relativeDir = $newFileName;
+                        }
 
-                FileSystem::copy($file, $newPath);
-                $index++;
+                        $newPath = $this->migrationsDir . $relativeDir;
+
+                        FileSystem::copy($file, $newPath);
+                        $index++;
+                    }
+                }
             }
         }
     }
-
 
 
 }

@@ -159,7 +159,6 @@ class ImageStorage extends \Contributte\ImageStorage\ImageStorage
      */
     public function fromIdentifier($args): Image
     {
-
         if (!is_array($args)) {
             $args = [$args];
         }
@@ -178,7 +177,7 @@ class ImageStorage extends \Contributte\ImageStorage\ImageStorage
          * If we need original photo, do not resize anything
          */
         if (sizeof($args) === 1) {
-            if (!file_exists(implode('/', [$this->data_path, $identifier])) || !$identifier) {
+            if (!file_exists($fileImage = implode('/', [$this->data_path, $identifier])) || !$identifier) {
                 return $this->getNoImage(TRUE);
             }
             return new Image($this->friendly_url, $this->data_dir, $this->data_path, $identifier);

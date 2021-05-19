@@ -1,10 +1,11 @@
 <?php
+// @deprecation use BootstrapTest class instead
 
 require_once dirname(__DIR__) . "/Devrun/Tests/BootstrapTest.php";
 
 return (new BootstrapTest())
-    ->setVendorDir(__DIR__ . "/../vendor")
-    ->setAppDir(dirname(__DIR__) . '/tests')
+    ->setLibsDir(__DIR__ . "/../vendor")
+    ->setSandbox(dirname(__DIR__) . '/tests')
     ->run();
 
 die("NOIC");

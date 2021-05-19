@@ -45,7 +45,7 @@ class MigrationListener implements Subscriber
      * @param IModule $module
      * @throws \Nextras\Migrations\Exception
      */
-    public function onInstall(ModuleFacade $moduleFacade, IModule $module)
+    public function onInstalled(ModuleFacade $moduleFacade, IModule $module)
     {
         if ($this->migrationUpdate) {
             Migration::continue($moduleFacade->getContext());
@@ -62,7 +62,7 @@ class MigrationListener implements Subscriber
     {
         return [
             "Devrun\Module\ModuleFacade::onUpdate" => ['onUpdate', 10],
-            "Devrun\Module\ModuleFacade::onInstall",
+            "Devrun\Module\ModuleFacade::onInstalled",
         ];
     }
 

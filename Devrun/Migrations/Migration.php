@@ -5,6 +5,7 @@ namespace Devrun\Migrations;
 use Devrun\FileNotFoundException;
 use Devrun\Utils\EscapeColors;
 use Kdyby\Doctrine\Dbal\BatchImport\Helpers;
+use Nette\Utils\FileSystem;
 use Nette\Utils\Validators;
 
 class Migration
@@ -58,8 +59,6 @@ class Migration
             $command = "mysqldump -u $username -p$password $dbname > $dbSnapshot";
             shell_exec($command);
         }
-
-
     }
 
 
@@ -82,7 +81,6 @@ class Migration
     }
 
 
-
     /**
      * @param \Nette\DI\Container $container
      * @param $conn
@@ -95,7 +93,7 @@ class Migration
         $driver = new \Nextras\Migrations\Drivers\MySqlDriver($dbal);
         $controller = new \Devrun\Migrations\Controllers\ExecController($driver);
 
-        self::check($baseDir = $container->parameters['migrationsDir']);
+        self::check($baseDir = $container->parameters['migrationsDir'], self::$autoCreateNonExistDir);
 
         $controller->addGroup('structures', "$baseDir/structures");
         $controller->addGroup('basic-data', "$baseDir/basic-data", array('structures'));
@@ -141,14 +139,42 @@ class Migration
     }
 
 
+    public static function emptyDatabase($container)
+    {
+        /** @var \Kdyby\Doctrine\EntityManager $em */
+        $em = $container->getByType('Kdyby\Doctrine\EntityManager');
+        $conn = $em->getConnection();
+
+        $dbal = new \Nextras\Migrations\Bridges\DoctrineDbal\DoctrineAdapter($conn);
+        $driver = new \Nextras\Migrations\Drivers\MySqlDriver($dbal);
+
+        $driver->emptyDatabase();
+    }
+
+
+    /**
+     * recreate migrations dir
+     *
+     * @param \Nette\DI\Container $container
+     */
+    public static function clearMigrations(\Nette\DI\Container $container)
+    {
+        $migrationDir = $container->parameters['migrationsDir'];
+        FileSystem::delete($migrationDir);
+
+        self::check($baseDir = $migrationDir, true);
+    }
+
+
     /**
      * @param $baseDir
      */
-    private static function check(string $baseDir)
+    private static function check(string $baseDir, bool $autoCreate = true)
     {
         foreach (['structures', 'basic-data', 'dummy-data', 'production',] as $dir) {
+
             if (!is_dir($dirName = "$baseDir/$dir")) {
-                if (self::$autoCreateNonExistDir) @mkdir($dirName);
+                if ($autoCreate) FileSystem::createDir($dirName, 0740);
             }
             if (!is_dir($dirName = "$baseDir/$dir")) {
                 throw new FileNotFoundException("Migration directory $dirName not found!");

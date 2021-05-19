@@ -1,9 +1,10 @@
 <?php
 
+namespace Devrun\Tests;
+
 /**
  * run once
  */
-
 class BootstrapTest {
 
     /** @var string|array appDir or sandbox array */
@@ -129,7 +130,7 @@ class BootstrapTest {
      */
     protected function getLogDir(): string
     {
-        if (null === $this->logDir) throw new \Devrun\InvalidArgumentException("setLogDirs first");
+        if (null === $this->logDir) throw new \Devrun\InvalidArgumentException("setLogDir first");
         if (!is_dir($this->logDir)) throw new \Devrun\InvalidArgumentException("logDir isn't correctly set");
         return $this->logDir;
     }
@@ -149,7 +150,7 @@ class BootstrapTest {
      */
     protected function getTempDir(): string
     {
-        if (null === $this->tempDir) throw new \Devrun\InvalidArgumentException("setTempDirs first");
+        if (null === $this->tempDir) throw new \Devrun\InvalidArgumentException("setTempDir first");
         return $this->tempDir;
     }
 
@@ -173,7 +174,7 @@ class BootstrapTest {
         $logDir .= DIRECTORY_SEPARATOR . 'tests';
         \Nette\Utils\FileSystem::createDir($logDir, 0755);
         if ($erase) \Devrun\Utils\FileTrait::eraseDirFromFiles($logDir, ['*.log', '*.html']);
-        $this->sandbox['logDir'] = $logDir;
+        $this->logDir = $this->sandbox['logDir'] = $logDir;
 
         return $this;
     }

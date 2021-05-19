@@ -30,7 +30,7 @@
 		"ext-zend-opcache": "*",
 		"ext-openssl": "*",
 	  	"ext-intl": "*"
-    },
+	},
 	"require-dev": {
 		"contributte/codeception": "^1.4@dev",
 		"phpunit/phpunit-dom-assertions": "~2",
