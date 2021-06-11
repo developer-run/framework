@@ -3,6 +3,7 @@
 namespace Devrun\DI;
 
 use Devrun\Application\UI\Images\Macros\Latte;
+use Devrun\Storage\ImageStorage;
 use Nette;
 use Nette\Schema\Expect;
 use Nette\Schema\Schema;
@@ -15,9 +16,11 @@ class ImagesExtension extends Nette\DI\CompilerExtension
 
     public function getConfigSchema(): Schema
     {
+        $builder = $this->getContainerBuilder();
+
         return Expect::structure([
-            'publicDir' => Expect::string("%wwwDir%"),
-            'data_path' => Expect::string('%wwwDir%/media'),
+            'publicDir' => Expect::string(Nette\DI\Helpers::expand("%wwwDir%", $builder->parameters)),
+            'data_path' => Expect::string(Nette\DI\Helpers::expand('%wwwDir%/media', $builder->parameters)),
             'data_dir' => Expect::string('media'),
             'algorithm_file' => Expect::string('sha1_file'),
             'algorithm_content' => Expect::string('sha1'),
@@ -48,7 +51,7 @@ class ImagesExtension extends Nette\DI\CompilerExtension
         }
 
         $builder->addDefinition($this->prefix('storage'))
-                ->setFactory('Devrun\Storage\ImageStorage')
+                ->setType(ImageStorage::class)
                 ->setArguments([
                     $config->publicDir,
                     $config->data_path,

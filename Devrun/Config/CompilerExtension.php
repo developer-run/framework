@@ -11,6 +11,7 @@ namespace Devrun\Config;
 
 use Devrun;
 use Nette;
+use Nette\DI\ContainerBuilder;
 
 class CompilerExtension extends \Nette\DI\CompilerExtension
 {
@@ -42,7 +43,31 @@ class CompilerExtension extends \Nette\DI\CompilerExtension
     }
 
 
+    /**
+     * FrontModule\DI\FrontExtension -> front
+     *
+     * @return string
+     */
+    protected function getExtensionName(): string
+    {
+        return strtolower(substr(strrchr(get_class($this), "\\"), 1, - strlen("extension")));
+    }
 
+
+    /**
+     * 
+     * 
+     * @return string|null
+     */
+    protected function getPath(): ?string
+    {
+        /** @var ContainerBuilder $builder */
+        $builder = $this->getContainerBuilder();
+
+        return $builder->parameters['modules'][$this->getExtensionName()]['path'] ?? null;
+    }
+    
+    
     /**
      * return sorted services by priority
      *

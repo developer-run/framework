@@ -11,7 +11,9 @@ namespace Devrun\Storage;
 
 use Contributte\ImageStorage\Image;
 use Contributte\ImageStorage\Exception\ImageResizeException;
-use Devrun\Utils\Debugger;
+use Nette\Caching\Cache;
+use Nette\Caching\Storage;
+use Nette\Utils\FileSystem;
 
 class ImageStorage extends \Contributte\ImageStorage\ImageStorage
 {
@@ -89,9 +91,14 @@ class ImageStorage extends \Contributte\ImageStorage\ImageStorage
         'shrink_only' => 1
     ];
 
+    /** @var \Nette\Caching\Cache */
+    private $cache;
 
-    public function __construct($www_dir, $data_path, $data_dir, $algorithm_file, $algorithm_content, $quality, $default_transform, $noimage_identifier, $friendly_url)
+
+    public function __construct($www_dir, $data_path, $data_dir, $algorithm_file, $algorithm_content, $quality, $default_transform, $noimage_identifier, $friendly_url, Storage $storage)
     {
+        $this->cache = new \Nette\Caching\Cache($storage, 'image-storage');
+
         $this->www_dir = $www_dir;
         $this->data_path = $data_path;
         $this->data_dir = $data_dir;
@@ -145,9 +152,7 @@ class ImageStorage extends \Contributte\ImageStorage\ImageStorage
 
 
     /**
-     * replace parent fromIdentifier
-     * parent method use sharpen image, this is not beautiful, remove it
-     *
+     * Create identifier image if need
      *
      * @param $args
      *
@@ -159,124 +164,42 @@ class ImageStorage extends \Contributte\ImageStorage\ImageStorage
      */
     public function fromIdentifier($args): Image
     {
-        if (!is_array($args)) {
-            $args = [$args];
-        }
-
         /**
          * Define image identifier
          */
         $identifier = $args[0];
 
-        /**
-         * For don`t crop if no image
-         */
-        $isNoImage = false;
+        // check if original medium file exist
+        if (!file_exists($fileImage = implode('/', [$this->data_path, $identifier]))) {
 
-        /**
-         * If we need original photo, do not resize anything
-         */
-        if (sizeof($args) === 1) {
-            if (!file_exists($fileImage = implode('/', [$this->data_path, $identifier])) || !$identifier) {
-                return $this->getNoImage(TRUE);
-            }
-            return new Image($this->friendly_url, $this->data_dir, $this->data_path, $identifier);
-        }
+            // check if original file exist
+            if (file_exists($path = implode('/', [$this->getWwwDir(), $identifier]))) {
+                $checksumIdentifier = $this->cache->load($identifier, function (&$dependencies) use ($identifier, $path) {
+                    $checksum = call_user_func_array($this->algorithm_file, [$path]);
 
-        /**
-         * Define new image size (w, h)
-         */
-        preg_match('/(\d+)?x(\d+)?(crop(\d+)x(\d+)x(\d+)x(\d+))?/', $args[1], $matches);
-        $size = [(int) $matches[1], (int) $matches[2]];
-        $crop = [];
+                    $namespace = dirname($identifier);
+                    $name = basename($identifier);
 
-        if (!$size[0] || !$size[1]) {
-            throw new ImageResizeException("Error resizing image. You have to provide both width and height.");
-        }
+                    $prefix = substr($checksum, 0, 2);
+                    $savePath = implode('/', [$this->data_path, $namespace, $prefix, $name]);
 
-        if (sizeof($matches) === 8) {
-            $crop = [(int) $matches[4], (int) $matches[5], (int) $matches[6], (int) $matches[7]];
-        }
+                    if (!file_exists($savePath)) {
+                        FileSystem::copy($path, $savePath);
+                    }
 
-        /**
-         * Define transform method / flag
-         */
-        $flag = isset($args[2]) ? $args[2] : $this->default_transform;
-        $quality = isset($args[3]) ? $args[3] : $this->quality;
+                    $dependencies[Cache::EXPIRE] = '1 month';
+                    $dependencies[Cache::FILES] = [$path, $savePath];
 
-        /**
-         * Verify that given identifier is not empty
-         */
-        if (!$identifier) {
-            $is_no_image = FALSE;
-            list($script, $file) = $this->getNoImage(FALSE);
-        } else {
-            /**
-             * Create ImageNameScript and set particular sizes, flags, etc
-             */
+                    return implode('/', [$namespace, $prefix, $name]);
+                });
 
-            $script = ImageNameScript::fromIdentifier($identifier);
-
-            /**
-             * Verify existency of image
-             */
-            $file = implode('/', [$this->data_path, $script->original]);
-            if (!file_exists($file)) {
-                $is_no_image = TRUE;
-                list($script, $file) = $this->getNoImage(FALSE);
+                $args[0] = $checksumIdentifier;
             }
         }
 
-        $script->setSize($size);
-        $script->setCrop($crop);
-        $script->setFlag($flag);
-        $script->setQuality($quality);
-
-        $identifier = $script->getIdentifier();
-
-        if (!file_exists(implode('/', [$this->data_path, $identifier]))) {
-            /**
-             * $file is now a path to noimage file (if any)
-             */
-
-            if (!file_exists($file)) {
-                /**
-                 * Raise and exception?
-                 */
-                return new Image(NULL, '#', '#', 'Can not find image');
-            }
-
-            $_image = \Nette\Utils\Image::fromFile($file);
-
-            if ($script->hasCrop() && !$isNoImage) {
-                call_user_func_array([$_image, 'crop'], $script->crop);
-            }
-
-            if (FALSE !== strpos($flag, '+')) {
-                $bits = 0;
-
-                foreach (explode('+', $flag) as $f) {
-                    $bits = $this->_image_flags[$f] | $bits;
-                }
-
-                $flag = $bits;
-            } else {
-                $flag = $this->_image_flags[$flag];
-            }
-
-            /*
-             * modify from parent
-             */
-            $_image
-                ->resize($size[0], $size[1], $flag)
-                ->save(
-                    implode('/', [$this->data_path, $identifier]),
-                    $quality
-                );
-        }
-
-        return new Image($this->friendly_url, $this->data_dir, $this->data_path, $identifier, ['script' => $script]);
+        return parent::fromIdentifier($args);
     }
+
 
     /**
      * @return string
